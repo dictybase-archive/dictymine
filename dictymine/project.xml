@@ -1,0 +1,52 @@
+<project type="bio">
+  <property name="target.model" value="genomic"/>
+  <property name="source.location" location="../bio/sources/"/>
+  <property name="common.os.prefix" value="common"/>
+  <property name="intermine.properties.file" value="dictymine.properties"/>
+  <property name="default.intermine.properties.file" location="../default.intermine.integrate.properties"/>
+  <sources>
+      <!--<source name="go" type="go">-->
+          <!--<property name="src.data.file" location="/intermine/dictymine/data/ontology/go.obo"/>-->
+      <!--</source>-->
+      <source name="discoideum-ax4" type="discoideum-ax4">
+          <property name="src.data.dir" location="/intermine/dictymine/data/gff/discoideum/"/>
+          <property name="gff3.taxonId" value="352472"/>
+      </source>
+      <source name="fasciculatum-sh3" type="dictyostelid">
+          <property name="src.data.dir" location="/intermine/dictymine/data/gff/fasciculatum/"/>
+          <property name="gff3.seqClsName" value="Supercontig"/>
+          <property name="gff3.taxonId" value="261658"/>
+          <property name="gff3.dataSetTitle" value="dictyBase D.fasiculatum SH3 genome"/>
+      </source>
+      <source name="purpureum-qsdp1" type="dictyostelid">
+          <property name="src.data.dir" location="/intermine/dictymine/data/gff/purpureum/"/>
+          <property name="gff3.seqClsName" value="Supercontig"/>
+          <property name="gff3.taxonId" value="5786"/>
+          <property name="gff3.dataSetTitle" value="dictyBase D.purpureum QSDP1 genome"/>
+      </source>
+      <source name="pallidum-ck8" type="dictyostelid">
+          <property name="src.data.dir" location="/intermine/dictymine/data/gff/pallidum/mitochondrial/"/>
+          <property name="gff3.seqClsName" value="Supercontig"/>
+          <property name="gff3.taxonId" value="13642"/>
+          <property name="gff3.dataSetTitle" value="dictyBase P.pallidum CK8 mitochondrial  genome"/>
+      </source>
+      <source name="pallidum-pn500" type="dictyostelid">
+          <property name="src.data.dir" location="/intermine/dictymine/data/gff/pallidum/nuclear/"/>
+          <property name="gff3.seqClsName" value="Supercontig"/>
+          <property name="gff3.taxonId" value="670386"/>
+          <property name="gff3.dataSetTitle" value="dictyBase P.pallidum PN500  genome"/>
+      </source>
+      <source name="organism" type="entrez-organism">
+          <property name="src.data.file" location="build/organisms.xml"/>
+      </source>
+  </sources>
+  <post-processing>
+    <post-process name="create-references" />
+    <post-process name="do-sources" />
+    <post-process name="summarise-objectstore"/>
+    <post-process name="create-search-index"/>
+    <post-process name="create-autocomplete-index"/>
+  </post-processing>
+
+</project>
+

@@ -1,0 +1,4 @@
+<query model="genomic" view="Gene.primaryIdentifier Gene.symbol" sortOrder="Gene.primaryIdentifier ASC" constraintLogic="A and B" >
+  <constraint path="Gene.organism.taxonId" op="=" value="352472" code="A" />
+  <constraint path="Gene.gffSource.name" op="=" value="dictyBase Curator" code="B" />
+</query>
