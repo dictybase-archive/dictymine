@@ -1,0 +1,85 @@
+# This file specifies the how to access local postgres databases used for
+# building and running and InterMine.bio warehouse.  Also some configuration
+# of InterMine behaviour.
+
+#######################
+# database properties #
+#######################
+
+# if true will log details about execution time of every query
+os.production.verboseQueryLog=true
+
+# Access to the postgres database to build into and access from the webapp
+db.production.datasource.serverName=xxxx
+db.production.datasource.databaseName=xxxx
+db.production.datasource.user=xxxx
+db.production.datasource.password=xxxx
+db.production.datasource.port=xxxx
+
+# Temporary database used during the build process, this is re-built
+# as sources are loaded and can be discarded once the warehouse build is complete
+# It uses the InterMine 'items' metadata format to describe objects.
+
+# common target items database
+db.common-tgt-items.datasource.serverName=xx
+db.common-tgt-items.datasource.databaseName=xxxxx
+db.common-tgt-items.datasource.user=xxxxx
+db.common-tgt-items.datasource.password=xxxx
+db.common-tgt-items.datasource.port=xxxx
+
+
+
+# userprofile database - used by the webapp to store logins, query history,
+# saved bags, templates and tags.
+db.userprofile-production.datasource.serverName=xxxxx
+db.userprofile-production.datasource.databaseName=xxxx
+db.userprofile-production.datasource.user=xxxxx
+db.userprofile-production.datasource.password=xxxxx
+db.userprofile-production.datasource.port=xxxx
+
+
+# files for ID resolvers
+#resolver.file.rootpath=/DATA/idresolver
+
+#####################
+# webapp properties #
+#####################
+
+# Web application deployment properties
+
+# location of tomcat server and path of webapp - e.g. access http://localhost:8080/malariamine
+webapp.deploy.url=http://localhost:8080
+webapp.path=dictymine
+
+# tomcat username and password needed to deploy webapp
+webapp.manager=dictytom
+webapp.password=dictytompass
+
+# 'Home' link
+webapp.baseurl=http://localhost:8080
+
+# account name for superuser (who can edit appearance and publish templates)
+superuser.account=xxxxxx
+superuser.initialPassword=xxxxx
+
+# run with no associated web site
+project.standalone=true
+
+# details for sending login e-mails
+mail.host=localhost
+mail.from=account@my_mail_host
+mail.subject=Welcome to dictyMine
+mail.text=You have successfully created an account on dictyMine
+
+# text that appears in the header and elsewhere
+project.title=dictyMine
+project.subTitle=An example of InterMine.bio with data from <i>Dictyostelium discoideum</i>
+project.releaseVersion=dev
+
+# various URLs use this as the prefix
+project.sitePrefix=http://www.dictybase.org
+project.helpLocation=http://dictybase.org/FAQ/HelpFilesIndex.html
+
+# recipient of feedback form located on bottom of every page
+feedback.destination = test_user@mail_address
+
