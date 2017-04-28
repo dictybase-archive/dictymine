@@ -1,0 +1,4 @@
+<project name="dictyostelid-tasks" default="default" basedir=".">
+  <description>build dictyostelid tasks</description>
+  <import file="../../../../imbuild/library.xml"/> 
+</project>

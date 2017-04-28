@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!-- This file details any extensions needed to the data model to store data from this source, everything else is automatically generated from the model description so this is all we need to do to add to the model. -->
+
+<classes>
+<!-- add any <class> elements here -->
+    <class name="Contig" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="Polypeptide" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="Pseudogene" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="PseudogenicTranscript" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="PseudogenicExon" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="ESTMatch" extends="EST" is-interface="true">
+    </class>
+    <class name="MatchPart" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="CDNACloneMatch" extends="CDNAClone" is-interface="true">
+    </class>
+    <class name="NucleotideMatch" extends="SequenceFeature" is-interface="true">
+    </class>
+    <class name="AntisenseRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="SnoRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="CDBoxSnoRNA" extends="SnoRNA" is-interface="true">
+    </class>
+    <class name="HACABoxSnoRNA" extends="SnoRNA" is-interface="true">
+    </class>
+    <class name="ClassIRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="ClassIIRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="SRPRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="SnRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="RNasePRNA" extends="NcRNA" is-interface="true">
+    </class>
+    <class name="GFFSource" is-interface="true">
+	    <attribute name="name" type="java.lang.String"/>
+        <collection name="genes" referenced-type="Gene"/>
+    </class>
+    <class name="Gene" extends="SequenceFeature" is-interface="true">
+        <reference name="gffSource" referenced-type="GFFSource"/>
+    </class>
+</classes>

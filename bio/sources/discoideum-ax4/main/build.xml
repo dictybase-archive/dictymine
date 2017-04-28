@@ -1,0 +1,4 @@
+<project name="discoideum-ax4-tasks" default="default" basedir=".">
+  <description>build discoideum-ax4 tasks</description>
+  <import file="../../../../imbuild/library.xml"/> 
+</project>
