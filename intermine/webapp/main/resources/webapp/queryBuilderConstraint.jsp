@@ -87,7 +87,7 @@
             <td>
             <!--  constraint op -->
             <c:choose>
-              <c:when test="${dec.boolean}">
+              <c:when test="${dec['boolean']}">
                 <!--  boolean does not have a separate op dropdown -->
                 <html:hidden property="attributeOp" styleId="attribute1"
                   value="0" disabled="false" />

@@ -13,7 +13,7 @@
 <tiles:importAttribute name="bag" ignore="false" />
 
 <html:xhtml/>
-<c:set var="split" value="${fn:split(widget.class,'.')}"/>
+<c:set var="split" value="${fn:split(widget['class'],'.')}"/>
 <c:set var="type" value="${split[fn:length(split)-1]}"/>
 
 <c:choose>

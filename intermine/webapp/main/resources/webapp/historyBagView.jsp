@@ -143,7 +143,7 @@ if (!im.bagWorks) {
               <td class="sorting"><im:displaypath path="${savedBag.value.type}"/></td>
               <td id="size_${savedBag.value.name}" class="sorting" align="right">
                 <c:out value="${savedBag.value.size}"/>&nbsp;<c:choose>
-                  <c:when test="${fn:endsWith(savedBag.value.class.name, 'InterMineIdBag')}">object</c:when>
+                  <c:when test="${fn:endsWith(savedBag.value['class'].name, 'InterMineIdBag')}">object</c:when>
                   <c:otherwise>value</c:otherwise>
                 </c:choose>
                 <c:if test="${savedBag.value.size != 1}">s</c:if>
