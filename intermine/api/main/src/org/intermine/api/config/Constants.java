@@ -75,6 +75,6 @@ public final class Constants
     /**
      * Constraint for related data template
      */
-    public static final String RELATED_DATA_CONSTRAINT_2
-        = "&constraint2=Gene.homologues.homologue.organism.shortName&op2=eq&value2=";
+    //public static final String RELATED_DATA_CONSTRAINT_2
+        //= "&constraint2=Gene.homologues.homologue.organism.shortName&op2=eq&value2=";
 }
