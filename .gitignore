@@ -15,6 +15,7 @@ productionLog
 data/
 .classpath
 .project
+.gradle/
 
 !/intermine/webservice/client/download/dist/
 
