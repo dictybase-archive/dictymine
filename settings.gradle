@@ -8,11 +8,21 @@
  * in the user guide at https://docs.gradle.org/3.4.1/userguide/multi_project_builds.html
  */
 
-/*
 // To declare projects as part of a multi-project build use the 'include' method
-include 'shared'
-include 'api'
-include 'services:webservice'
-*/
+include 'intermine:api'
+include 'intermine:api:model:userprofile'
+include 'intermine:integrate'
+include 'intermine:integrate:model:fulldata'
+include 'intermine:jbrowse-endpoint'
+include 'intermine:model'
+include 'intermine:objectstore'
+include 'intermine:pathquery'
+include 'intermine:web'
+include 'intermine:webtasks'
+include 'intermine:webservice:client'
+include 'intermine:webtasks'
+include 'bio:tools'
+include 'bio:webapp'
+include 'bio:core'
 
 rootProject.name = 'intermine'
