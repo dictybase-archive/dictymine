@@ -67,6 +67,14 @@ project(':intermine:api') {
     dependencies {
 		implementation project(':intermine:objectstore')
 		implementation project(':intermine:pathquery')
+		implementation project(':intermine:model')
+		implementation project(':intermine:api:model:userprofile')
+        implementation group: 'org.json', name: 'json', version: '20110106'
+        implementation group: 'org.apache.ant', name: 'ant', version: '1.6.5'
+        implementation group: 'commons-io', name: 'commons-io', version: '1.2'
+        implementation group: 'net.sourceforge.iharder', name: 'base64', version: '2.3.8'
+        implementation group: 'log4j', name: 'log4j', version: '1.2.7'
+        implementation group: 'commons-collections', name: 'commons-collections', version: '3.2'
         implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
         implementation group: 'com.browseengine.bobo', name: 'bobo-browse', version: '2.5.1'
         implementation group: 'it.unimi.dsi', name: 'fastutil', version: '6.1.0'
@@ -83,7 +91,7 @@ project(':intermine:api:model:userprofile') {
     sourceSets {
         main {
             java {
-                srcDirs = ['src']
+                srcDirs = ["${buildDir}/gen/src"]
             }
             resources {
                 srcDirs = ['resources']
@@ -91,9 +99,16 @@ project(':intermine:api:model:userprofile') {
         }
     }
 
+    configurations {
+        log4j
+        lang
+    }
+
 	dependencies {
-		//implementation project(':intermine:model')
 		implementation project(':intermine:objectstore')
+		implementation project(':intermine:model')
+        log4j group: 'log4j', name: 'log4j', version: '1.2.7'
+        lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
 	}
 
 	task copyFiles(type: Copy) {
@@ -125,12 +140,18 @@ project(':intermine:api:model:userprofile') {
 	task generateModel(dependsOn: [createBuildFolder, copyFiles]) {
 		description 'Generate model classes from xml definition file'
 		doLast {
-			println project(':intermine:objectstore').sourceSets.main.output.classesDir
 			ant.taskdef(
 				name: 'modelOutput',
-				className: 'org.intermine.task.ModelOutputTask',
-				classPath: project(':intermine:objectstore').sourceSets.main.output.classesDir 	
-			)
+				classname: 'org.intermine.task.ModelOutputTask'
+            ){
+                classpath {
+                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
+                    pathelement(path: configurations.log4j.asPath)
+                    pathelement(path: configurations.lang.asPath)
+                    pathelement(path: "${buildDir}/main")
+                }
+            }
 			ant.modelOutput(
 				type: 'java',
 				model: 'userprofile',
@@ -139,6 +160,7 @@ project(':intermine:api:model:userprofile') {
 		}
 	}
 
+    compileJava.dependsOn(generateModel)
 }
 
 project(':intermine:integrate') {
