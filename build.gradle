@@ -65,6 +65,9 @@ subprojects {
 
 project(':intermine:api') {
     dependencies {
+		implementation project(':intermine:objectstore')
+		implementation project(':intermine:pathquery')
+        implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
         implementation group: 'com.browseengine.bobo', name: 'bobo-browse', version: '2.5.1'
         implementation group: 'it.unimi.dsi', name: 'fastutil', version: '6.1.0'
         implementation group: 'com.linkedin.kamikaze', name: 'kamikaze', version: '2.0.0'
@@ -89,7 +92,7 @@ project(':intermine:api:model:userprofile') {
     }
 
 	dependencies {
-		implementation project(':intermine:model')
+		//implementation project(':intermine:model')
 		implementation project(':intermine:objectstore')
 	}
 
@@ -165,17 +168,7 @@ project(':intermine:integrate:model:fulldata') {
 }
 
 project(':intermine:model') {
-
-
     dependencies {
-		//implementation project(':intermine:objectstore')
-		//implementation project(':intermine:integrate')
-		//implementation project(':intermine:integrate:model:fulldata')
-		//implementation project(':intermine:api:model:userprofile')
-		//implementation project(':intermine:api')
-		//implementation project(':intermine:pathquery')
-		//implementation project(':intermine:objectstore')
-		//implementation project(':bio:core')
         implementation group: 'org.ow2.asm', name: 'asm-all', version: '4.2'
         implementation group: 'org.ow2.asm', name: 'asm-util', version: '4.2'
         implementation group: 'cglib', name: 'cglib', version: '3.1'
@@ -226,7 +219,20 @@ project(':intermine:objectstore') {
 }
 
 project(':intermine:pathquery') {
+	apply plugin: 'antlr'
+
+    sourceSets {
+        main {
+            antlr {
+                srcDirs = ['main/src']
+            }
+        }
+    }
+
 	dependencies {
+       implementation project(':intermine:model')
+       implementation group: 'log4j', name: 'log4j', version: '1.2.7'
+       implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
        implementation group: 'stax', name: 'stax-ri', version: '1.0'
 	}
 }
