@@ -99,6 +99,7 @@ project(':intermine:api:model:userprofile') {
 
 	dependencies {
 		api project(':intermine:model')
+        api project(':intermine:objectstore')
         log4j group: 'log4j', name: 'log4j', version: '1.2.7'
         lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
 	}
@@ -304,6 +305,13 @@ project(':intermine:pathquery') {
        api project(':intermine:model')
        implementation group: 'stax', name: 'stax-ri', version: '1.0'
 	}
+}
+
+project(':intermine:webtasks') {
+    dependencies {
+        api project(':intermine:web')
+        api project(':intermine:integrate')
+    }
 }
 
 project(':intermine:web') {
