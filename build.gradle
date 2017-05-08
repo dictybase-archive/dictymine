@@ -366,6 +366,14 @@ project(':bio:core') {
 	}
 }
 
+project(':bio:tools') {
+    dependencies {
+        api project(':bio:core')
+        api project(':intermine:integrate')
+        api project(':intermine:api')
+    }
+}
+
 project(':bio:webapp') {
     sourceSets {
         main {
