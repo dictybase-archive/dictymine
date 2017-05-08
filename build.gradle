@@ -71,7 +71,7 @@ project(':intermine:api') {
         api group: 'org.apache.ant', name: 'ant', version: '1.6.5'
         api group: 'com.browseengine.bobo', name: 'bobo-browse', version: '2.5.1'
         api group: 'org.apache.lucene', name: 'lucene-queries', version: '3.0.2'
-        implementation group: 'org.json', name: 'json', version: '20110106'
+        api group: 'org.json', name: 'json', version: '20110106'
         implementation group: 'it.unimi.dsi', name: 'fastutil', version: '6.1.0'
         implementation group: 'com.linkedin.kamikaze', name: 'kamikaze', version: '2.0.0'
         implementation group: 'org.apache.lucene', name: 'lucene-core', version: '3.0.2'
@@ -99,7 +99,6 @@ project(':intermine:api:model:userprofile') {
     }
 
 	dependencies {
-		api project(':intermine:objectstore')
 		api project(':intermine:model')
         log4j group: 'log4j', name: 'log4j', version: '1.2.7'
         lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
@@ -157,6 +156,79 @@ project(':intermine:api:model:userprofile') {
     compileJava.dependsOn(generateModel)
 }
 
+
+project(':intermine:integrate:model:fulldata') {
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["${buildDir}/gen/src"]
+            }
+            resources {
+                srcDirs = ['resources']
+            }
+        }
+    }
+
+
+    configurations {
+        log4j
+        lang
+    }
+
+	dependencies {
+		api project(':intermine:objectstore')
+        log4j group: 'log4j', name: 'log4j', version: '1.2.7'
+        lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
+    }
+
+	task copyFiles(type: Copy) {
+		description 'Copies xml model files to build directory'
+		from "${projectDir}/fulldata_model.xml"
+		into "${buildDir}/main"
+	}
+
+	task createBuildFolder {
+		description 'Create build folders for generating classes'
+		doLast {
+			FileCollection collection = files(
+							"${buildDir}/model",
+							"${buildDir}/main",
+							"${buildDir}/tmp",
+							"${buildDir}/classes",
+							"${buildDir}/gen/src",
+
+						)
+			collection.each { File file -> 
+				file.mkdirs()
+			}
+		}
+	}
+
+	task generateModel(dependsOn: [createBuildFolder, copyFiles]) {
+		description 'Generate model classes from xml definition file'
+		doLast {
+			ant.taskdef(
+				name: 'fulldataModelOutput',
+				classname: 'org.intermine.task.ModelOutputTask'
+            ){
+                classpath {
+                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
+                    pathelement(path: configurations.log4j.asPath)
+                    pathelement(path: configurations.lang.asPath)
+                    pathelement(path: "${buildDir}/main")
+                }
+            }
+			ant.fulldataModelOutput(
+				type: 'java',
+				model: 'fulldata',
+				destdir: "${buildDir}/gen/src"
+			)
+		}
+	}
+    compileJava.dependsOn(generateModel)
+}
+
 project(':intermine:integrate') {
     dependencies {
 		implementation project(':intermine:model')
@@ -170,18 +242,6 @@ project(':intermine:integrate') {
     }
 }
 
-project(':intermine:integrate:model:fulldata') {
-    sourceSets {
-        main {
-            java {
-                srcDirs = ['src']
-            }
-            resources {
-                srcDirs = ['resources']
-            }
-        }
-    }
-}
 
 project(':intermine:model') {
     dependencies {
@@ -253,6 +313,7 @@ project(':intermine:pathquery') {
 project(':intermine:web') {
 	dependencies {
 		api project(':intermine:api')
+		api group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
         implementation group: 'stringtree', name: 'stringtree-json', version: '2.0.5'
 		implementation group: 'javax.activation', name: 'activation', version: '1.1'
 		implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.50'
@@ -262,7 +323,6 @@ project(':intermine:web') {
 		implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.0'
 		implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.2'
 		implementation group: 'commons-validator', name: 'commons-validator', version: '1.3.1'
-		implementation group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
 		implementation group: 'org.directwebremoting', name: 'dwr', version: '2.0.1'
 		implementation group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.3.1'
 		implementation group: 'org.jfree', name: 'jcommon', version: '1.0.17'
@@ -282,6 +342,12 @@ project(':intermine:web') {
 		implementation group: 'org.apache.taglibs', name: 'taglibs-standard-impl', version: '1.2.1'
 		implementation group: 'com.yahoo.platform.yui', name: 'yuicompressor', version: '2.4.6'
 	}
+}
+
+project(':intermine:jbrowse-endpoint') {
+    dependencies {
+        api project(':intermine:web')
+    }
 }
 
 project(':bio:core') {
@@ -307,11 +373,7 @@ project(':bio:webapp') {
     }
 
 	dependencies {
-        implementation project(':intermine:model')
-		implementation project(':intermine:objectstore')
-		implementation project(':intermine:pathquery')
-		implementation project(':intermine:api')
-        implementation group: 'commons-lang', name: 'commons-lang', version: '2.6'
+		implementation project(':intermine:jbrowse-endpoint')
 		implementation group: 'org.apache.axis', name: 'axis', version: '1.4'
 		implementation group: 'org.biojava', name: 'biojava', version: '1.7.1'
 		implementation group: 'psidev.psi.mi.jami.bridges', name: 'bridges-core', version: '1.1.0'
