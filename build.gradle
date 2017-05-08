@@ -356,6 +356,8 @@ project(':intermine:jbrowse-endpoint') {
 
 project(':bio:core') {
 	dependencies {
+        api project(':intermine:api')
+        api project(':intermine:integrate')
 		implementation group: 'obo', name: 'bbop', version: '1.000'
 		implementation group: 'jakarta-regexp', name: 'jakarta-regexp', version: '1.4'
 		implementation group: 'com.hp.hpl.jena', name: 'jena', version: '2.6.4'
