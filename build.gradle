@@ -60,6 +60,24 @@ subprojects {
             }
         }
     }
+
+	task createBuildFolder {
+		description 'Create build folders for generating classes'
+		doLast {
+			FileCollection collection = files(
+							"${buildDir}/model",
+							"${buildDir}/main",
+							"${buildDir}/tmp",
+							"${buildDir}/classes",
+							"${buildDir}/gen/src",
+
+						)
+			collection.each { File file -> 
+				file.mkdirs()
+			}
+		}
+	}
+
 }
 
 project(':intermine:api') {
@@ -111,23 +129,6 @@ project(':intermine:api:model:userprofile') {
 
 		from "${projectDir}/userprofile_model.xml"
 		into "${buildDir}/main"
-	}
-
-	task createBuildFolder {
-		description 'Create build folders for generating classes'
-		doLast {
-			FileCollection collection = files(
-							"${buildDir}/model",
-							"${buildDir}/main",
-							"${buildDir}/tmp",
-							"${buildDir}/classes",
-							"${buildDir}/gen/src",
-
-						)
-			collection.each { File file -> 
-				file.mkdirs()
-			}
-		}
 	}
 
 	task generateModel(dependsOn: [createBuildFolder, copyFiles]) {
@@ -185,23 +186,6 @@ project(':intermine:integrate:model:fulldata') {
 		description 'Copies xml model files to build directory'
 		from "${projectDir}/fulldata_model.xml"
 		into "${buildDir}/main"
-	}
-
-	task createBuildFolder {
-		description 'Create build folders for generating classes'
-		doLast {
-			FileCollection collection = files(
-							"${buildDir}/model",
-							"${buildDir}/main",
-							"${buildDir}/tmp",
-							"${buildDir}/classes",
-							"${buildDir}/gen/src",
-
-						)
-			collection.each { File file -> 
-				file.mkdirs()
-			}
-		}
 	}
 
 	task generateModel(dependsOn: [createBuildFolder, copyFiles]) {
@@ -411,3 +395,49 @@ project(':bio:webapp') {
 	}
 }
 	
+project(':dictymine:dbmodel') {
+
+    configurations {
+        log4j
+        lang
+        bbop
+        collections
+        obo
+    }
+
+    dependencies {
+        api project(':bio:core')
+        api project(':intermine:model')
+        log4j group: 'log4j', name: 'log4j', version: '1.2.7'
+        lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
+		bbop group: 'obo', name: 'bbop', version: '1.000'
+        collections group: 'commons-collections', name: 'commons-collections', version: '3.2'
+		obo group: 'obo', name: 'obo', version: '1.000'
+    }
+
+	task createSOModel(dependsOn: createBuildFolder){
+		description 'create so model xml definition file'
+		doLast {
+			ant.taskdef(
+				name: 'somodel',
+				classname: 'org.intermine.bio.task.SOToModelTask'
+            ){
+                classpath {
+                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
+                    pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
+                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
+                    pathelement(path: configurations.log4j.asPath)
+                    pathelement(path: configurations.lang.asPath)
+                    pathelement(path: configurations.bbop.asPath)
+                    pathelement(path: configurations.obo.asPath)
+                    pathelement(path: configurations.collections.asPath)
+                }
+            }
+			ant.somodel(
+                soTermListFile: file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt").toString(),
+                soFile: file("${rootDir}/bio/sources/so/data/so.obo2.5").toString(),
+                outputFile: file("${buildDir}/model/so_additions.xml").toString() 
+			)
+		}
+	}
+}
