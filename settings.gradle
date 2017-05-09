@@ -23,5 +23,6 @@ include 'intermine:webtasks'
 include 'bio:tools'
 include 'bio:webapp'
 include 'bio:core'
+include 'dictymine:dbmodel'
 
 rootProject.name = 'intermine'
