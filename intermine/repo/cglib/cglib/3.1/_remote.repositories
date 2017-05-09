@@ -1,0 +1,4 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Sat May 06 11:57:27 GMT 2017
+cglib-3.1.jar>=
+cglib-3.1.pom>=
