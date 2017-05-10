@@ -24,5 +24,6 @@ include 'bio:tools'
 include 'bio:webapp'
 include 'bio:core'
 include 'dictymine:dbmodel'
+include 'imbuild:im-ant-tasks'
 
 rootProject.name = 'intermine'
