@@ -81,6 +81,12 @@ subprojects {
 		}
 	}
 
+	task copyLog4jProp(type: Copy, dependsOn: createBuildFolder) {
+		description 'Copies log properites and xml model files to build directory'
+		from "${rootDir}/imbuild/task.log4j.properties"
+		into "${buildDir}/main"
+    }
+
     task copyMineProperties(type: Copy) {
         description 'Copy the default and mine specific(either from $HOME/.intermine/yourmine.properties or $INTERMINE_PROPERTY) property files to build folder'
         def mineProp = file(System.getenv("HOME") + '/.intermine/' + mineName + '.properties')
@@ -417,6 +423,17 @@ project(':bio:webapp') {
 	
 project(':dictymine:dbmodel') {
 
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["${buildDir}/gen/src"]
+            }
+            resources {
+                srcDirs = ['resources']
+            }
+        }
+    }
+
     configurations {
         log4j
         lang
@@ -428,6 +445,7 @@ project(':dictymine:dbmodel') {
     dependencies {
         api project(':bio:core')
         api project(':intermine:model')
+        api project(':imbuild:im-ant-tasks')
         log4j group: 'log4j', name: 'log4j', version: '1.2.7'
         lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
 		bbop group: 'obo', name: 'bbop', version: '1.000'
@@ -435,14 +453,18 @@ project(':dictymine:dbmodel') {
 		obo group: 'obo', name: 'obo', version: '1.000'
     }
 
-	task copyFiles(type: Copy) {
-		description 'Copies log properites and xml model files to build directory'
-		from "${rootDir}/imbuild/task.log4j.properties"
-		into "${buildDir}/main"
-
-		from "${project(':bio:core')}/core.xml"
-		into "${buildDir}/model"
+	task copyModelFile(type: Copy, dependsOn: createBuildFolder) {
+		description 'Copies genomic model xml model files to build/model directory'
+        from file("${project(':bio:core').projectDir}")
+        into "${buildDir}/model"
+        include "core.xml"
         rename "core.xml", "genomic_model.xml"
+	}
+
+	task copyModelFileForCompile(type: Copy) {
+		description 'Copies genomic model xml model files to build/main directory'
+        from "${buildDir}/model/genomic_model.xml"
+        into "${buildDir}/main"
 	}
 
 
@@ -472,30 +494,57 @@ project(':dictymine:dbmodel') {
 		}
 	}
 
-    task mergeSourceModel(dependsOn: [createSOModel, copyFiles]) {
+    task mergeSourceModel(dependsOn: [createSOModel, copyLog4jProp, copyModelFile]) {
         description 'merges all model defintions in xml format'
         doLast {
 			ant.taskdef(
 				name: 'mergesourcemodels',
 				classname: 'org.intermine.task.MergeSourceModelsTask'
             ){
-                classpath {
+                classpath(id: 'task.class.path' ) {
                     pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    //pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
+                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
                     pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
+                    pathelement(path: project(':imbuild:im-ant-tasks').sourceSets.main.output.classesDir) 	
                     pathelement(path: configurations.log4j.asPath)
                     pathelement(path: configurations.lang.asPath)
-                    //pathelement(path: configurations.collections.asPath)
                 }
             }
-            ant.mergesourcemodel(
+            ant.mergesourcemodels(
+                classpathref: 'task.class.path',
                 projectXml: file("${mineDir}/project.xml").toString(),
-                basedir: file("${rootDir}/imbuild").toString(),
+                basedir: rootDir,
                 modelFile: file("${buildDir}/model/genomic_model.xml").toString(),
-                extraModelPathsStart: file("${buildDir}/model/so_additions.xml").toString() + ' ' + file("${project(':bio:core')}/genomic_additions.xml").toString() 
+                extraModelPathsStart: "${mineName}/dbmodel/build/model/so_additions.xml" + ' ' + "bio/core/genomic_additions.xml",
+                extraModelPathsEnd: ' '
             )
         }
     }
+
+	task generateModel(dependsOn: [mergeSourceModel, copyModelFileForCompile]) {
+		description 'Generate genomic model classes from xml definition file'
+		doLast {
+			ant.taskdef(
+				name: 'genomicModelOutput',
+				classname: 'org.intermine.task.ModelOutputTask'
+            ){
+                classpath {
+                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
+                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
+                    pathelement(path: configurations.log4j.asPath)
+                    pathelement(path: configurations.lang.asPath)
+                    pathelement(path: "${buildDir}/main")
+                }
+            }
+			ant.genomicModelOutput(
+				type: 'java',
+				model: 'genomic',
+				destdir: "${buildDir}/gen/src"
+			)
+		}
+	}
+    compileJava.dependsOn(generateModel)
 }
 
 project(':imbuild:im-ant-tasks') {
