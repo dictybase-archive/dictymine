@@ -87,23 +87,29 @@ subprojects {
 		into "${buildDir}/main"
     }
 
-    task copyMineProperties(type: Copy) {
-        description 'Copy the default and mine specific(either from $HOME/.intermine/yourmine.properties or $INTERMINE_PROPERTY) property files to build folder'
-        def mineProp = file(System.getenv("HOME") + '/.intermine/' + mineName + '.properties')
-        if (!mineProp.exists()) {
-            if (System.getenv("INTERMINE_PROPERTY") == null) {
-                throw new StopActionException("could not find mine properties file !!!!")
-            } else {
-                mineProp = System.getenv("INTERMINE_PROPERTY")
+    task checkPropFile {
+        description 'Check for mine properties file, if absent throws error'
+        doLast {
+            def mineProp = file(System.getenv("HOME") + '/.intermine/' + mineName + '.properties')
+            if (!mineProp.exists()) {
+                if (System.getenv("INTERMINE_PROPERTY") == null) {
+                    throw new StopActionException("could not find mine properties file !!!!")
+                } else {
+                    mineProp = System.getenv("INTERMINE_PROPERTY")
+                }
             }
+            rootProject.ext.mineProp = mineProp
         }
-        from mineProp
+    }
+
+    task copyMineProperties(type: Copy, dependsOn: checkPropFile) {
+        description 'Copy the default mine property files to build folder'
+        from rootProject.ext.mineProp
         into "${buildDir}/main"
         
         from "${mineDir}/default.integrate.intermine.properties" 
         into "${buildDir}/main"
     }
-
 }
 
 project(':intermine:api') {
@@ -328,6 +334,10 @@ project(':intermine:web') {
 	dependencies {
 		api project(':intermine:api')
 		api group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+		api group: 'org.apache.struts', name: 'struts-core', version: '1.3.10'
+		api group: 'org.apache.struts', name: 'struts-extras', version: '1.3.10'
+		api group: 'org.apache.struts', name: 'struts-taglib', version: '1.3.10'
+		api group: 'org.apache.struts', name: 'struts-tiles', version: '1.3.10'
         implementation group: 'stringtree', name: 'stringtree-json', version: '2.0.5'
 		implementation group: 'javax.activation', name: 'activation', version: '1.1'
 		implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.50'
@@ -381,6 +391,7 @@ project(':bio:tools') {
         api project(':bio:core')
         api project(':intermine:integrate')
         api project(':intermine:api')
+        api project(':dictymine:dbmodel')
     }
 }
 
@@ -397,7 +408,10 @@ project(':bio:webapp') {
     }
 
 	dependencies {
+        implementation project(':bio:core')
+        implementation project(':bio:tools')
 		implementation project(':intermine:jbrowse-endpoint')
+		implementation project(':intermine:webtasks')
 		implementation group: 'org.apache.axis', name: 'axis', version: '1.4'
 		implementation group: 'org.biojava', name: 'biojava', version: '1.7.1'
 		implementation group: 'psidev.psi.mi.jami.bridges', name: 'bridges-core', version: '1.1.0'
@@ -421,132 +435,6 @@ project(':bio:webapp') {
 	}
 }
 	
-project(':dictymine:dbmodel') {
-
-    sourceSets {
-        main {
-            java {
-                srcDirs = ["${buildDir}/gen/src"]
-            }
-            resources {
-                srcDirs = ['resources']
-            }
-        }
-    }
-
-    configurations {
-        log4j
-        lang
-        bbop
-        collections
-        obo
-    }
-
-    dependencies {
-        api project(':bio:core')
-        api project(':intermine:model')
-        api project(':imbuild:im-ant-tasks')
-        log4j group: 'log4j', name: 'log4j', version: '1.2.7'
-        lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
-		bbop group: 'obo', name: 'bbop', version: '1.000'
-        collections group: 'commons-collections', name: 'commons-collections', version: '3.2'
-		obo group: 'obo', name: 'obo', version: '1.000'
-    }
-
-	task copyModelFile(type: Copy, dependsOn: createBuildFolder) {
-		description 'Copies genomic model xml model files to build/model directory'
-        from file("${project(':bio:core').projectDir}")
-        into "${buildDir}/model"
-        include "core.xml"
-        rename "core.xml", "genomic_model.xml"
-	}
-
-	task copyModelFileForCompile(type: Copy) {
-		description 'Copies genomic model xml model files to build/main directory'
-        from "${buildDir}/model/genomic_model.xml"
-        into "${buildDir}/main"
-	}
-
-
-	task createSOModel(dependsOn: createBuildFolder){
-		description 'create so model xml definition file'
-		doLast {
-			ant.taskdef(
-				name: 'somodel',
-				classname: 'org.intermine.bio.task.SOToModelTask'
-            ){
-                classpath {
-                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: configurations.bbop.asPath)
-                    pathelement(path: configurations.obo.asPath)
-                    pathelement(path: configurations.collections.asPath)
-                }
-            }
-			ant.somodel(
-                soTermListFile: file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt").toString(),
-                soFile: file("${rootDir}/bio/sources/so/data/so.obo2.5").toString(),
-                outputFile: file("${buildDir}/model/so_additions.xml").toString() 
-			)
-		}
-	}
-
-    task mergeSourceModel(dependsOn: [createSOModel, copyLog4jProp, copyModelFile]) {
-        description 'merges all model defintions in xml format'
-        doLast {
-			ant.taskdef(
-				name: 'mergesourcemodels',
-				classname: 'org.intermine.task.MergeSourceModelsTask'
-            ){
-                classpath(id: 'task.class.path' ) {
-                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
-                    pathelement(path: project(':imbuild:im-ant-tasks').sourceSets.main.output.classesDir) 	
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                }
-            }
-            ant.mergesourcemodels(
-                classpathref: 'task.class.path',
-                projectXml: file("${mineDir}/project.xml").toString(),
-                basedir: rootDir,
-                modelFile: file("${buildDir}/model/genomic_model.xml").toString(),
-                extraModelPathsStart: "${mineName}/dbmodel/build/model/so_additions.xml" + ' ' + "bio/core/genomic_additions.xml",
-                extraModelPathsEnd: ' '
-            )
-        }
-    }
-
-	task generateModel(dependsOn: [mergeSourceModel, copyModelFileForCompile]) {
-		description 'Generate genomic model classes from xml definition file'
-		doLast {
-			ant.taskdef(
-				name: 'genomicModelOutput',
-				classname: 'org.intermine.task.ModelOutputTask'
-            ){
-                classpath {
-                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: "${buildDir}/main")
-                }
-            }
-			ant.genomicModelOutput(
-				type: 'java',
-				model: 'genomic',
-				destdir: "${buildDir}/gen/src"
-			)
-		}
-	}
-    compileJava.dependsOn(generateModel)
-}
-
 project(':imbuild:im-ant-tasks') {
     dependencies {
         api group: 'org.apache.ant', name: 'ant', version: '1.6.5'
@@ -554,7 +442,6 @@ project(':imbuild:im-ant-tasks') {
         api group: 'xalan', name: 'xalan', version: '2.7.0'
         api group: 'xml-apis', name: 'xml-apis', version: '1.3.02'
         api group: 'tomcat', name: 'catalina-ant', version: '5.5.23'
-
     }
 
     sourceSets {
