@@ -27,3 +27,16 @@ include 'dictymine:dbmodel'
 include 'imbuild:im-ant-tasks'
 
 rootProject.name = 'intermine'
+
+// Setting non-default file name under dictymine folders
+// The following build files
+//		dbmodel.gradle, integrate.gradle and postprocess.gradle
+// will be picked up
+rootProject.getChildren().each { project ->
+	project.getChildren().each { childProj ->
+		def buildFile = file("${childProj.getProjectDir()}/${childProj.getName()}.gradle")
+		if (buildFile.exists()) {
+			childProj.setBuildFileName(buildFile.getName())
+		}
+	}
+}
