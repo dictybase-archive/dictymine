@@ -21,6 +21,7 @@ dependencies {
     api project(':bio:core')
     api project(':intermine:model')
     api project(':imbuild:im-ant-tasks')
+    api project(':intermine:integrate:model:fulldata')
     log4j group: 'log4j', name: 'log4j', version: '1.2.7'
     lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
     bbop group: 'obo', name: 'bbop', version: '1.000'
@@ -29,7 +30,7 @@ dependencies {
 }
 
 task copyModelFile(type: Copy, dependsOn: createBuildFolder) {
-    description 'Copies genomic model xml model files to build/model directory'
+    description 'Copies genomic xml model files to build/model directory'
     from file("${project(':bio:core').projectDir}")
     into "${buildDir}/model"
     include "core.xml"
@@ -37,7 +38,7 @@ task copyModelFile(type: Copy, dependsOn: createBuildFolder) {
 }
 
 task copyModelFileForCompile(type: Copy) {
-    description 'Copies genomic model xml model files to build/main directory'
+    description 'Copies genomic xml model files to build/main directory'
     from "${buildDir}/model/genomic_model.xml"
     into "${buildDir}/main"
 }
@@ -121,9 +122,31 @@ task generateModel(dependsOn: [mergeSourceModel, copyModelFileForCompile]) {
 }
 compileJava.dependsOn(generateModel)
 
-task copyGenomicProps(type: Copy) {
+task copyGenomicProps(type: Copy, dependsOn: createBuildFolder) {
     from "${projectDir}/resources"
     into "${buildDir}/model"
     include 'genomic_*'
 }
 
+task buildDb(dependsOn: [copyMineProperty, copyGenomicProps, compileJava]) {
+    description 'clean and build the objectstore'
+    doLast {
+        ant.taskdef(
+            name: 'buildtorque',
+            classname: 'org.intermine.objectstore.intermine.TorqueModelOutputTask'
+        ) {
+            classpath {
+                pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
+                pathelement(path: configurations.log4j.asPath)
+                pathelement(path: configurations.lang.asPath)
+                pathelement(path: "${buildDir}/main")
+                pathelement(path: sourceSets.main.output.classesDir)
+            }
+        }
+        ant.buildtorque(
+            osName: 'os.production',
+            destFile: file("${project(':intermine:integrate:model:fulldata').buildDir}/main/os.production-schema.xml").toString()
+        )
+    }
+}
