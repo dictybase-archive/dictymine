@@ -87,8 +87,10 @@ subprojects {
 
 	task copyLog4jProp(type: Copy, dependsOn: createBuildFolder) {
 		description 'Copies log properites and xml model files to build directory'
-		from "${rootDir}/imbuild/task.log4j.properties"
+		from "${rootDir}/imbuild"
 		into "${buildDir}/main"
+        include "task.log4j.properties"
+        rename "task.log4j.properties","log4j.properties"
     }
 
     task checkPropFile {
@@ -109,7 +111,7 @@ subprojects {
         from mineDir 
         into "${buildDir}/main"
         include "default.intermine.integrate.properties"
-        rename "default.intermine.integrate.properties" "default.intermine.properties" 
+        rename "default.intermine.integrate.properties", "default.intermine.properties" 
     }
 
     task copyMineProperty(type: Copy, dependsOn: [checkPropFile, copyDefaultProperty]) {
