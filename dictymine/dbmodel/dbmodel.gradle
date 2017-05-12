@@ -15,6 +15,9 @@ configurations {
     bbop
     collections
     obo
+    pg
+    hikari
+    torquegen
 }
 
 dependencies {
@@ -27,6 +30,9 @@ dependencies {
     bbop group: 'obo', name: 'bbop', version: '1.000'
     collections group: 'commons-collections', name: 'commons-collections', version: '3.2'
     obo group: 'obo', name: 'obo', version: '1.000'
+	pg group: 'org.postgresql', name: 'postgresql', version: '9.4.1212.jre7'
+	hikari group: 'com.zaxxer', name: 'HikariCP-java6', version: '2.3.8'
+	torquegen group: 'torque', name: 'torque-gen', version: '3.3'
 }
 
 task copyModelFile(type: Copy, dependsOn: createBuildFolder) {
@@ -44,7 +50,7 @@ task copyModelFileForCompile(type: Copy) {
 }
 
 
-task createSOModel(dependsOn: createBuildFolder){
+task createSOModel(dependsOn: [createBuildFolder, project(':bio:core').tasks.jar]){
     description 'create so model xml definition file'
     doLast {
         ant.taskdef(
@@ -70,7 +76,12 @@ task createSOModel(dependsOn: createBuildFolder){
     }
 }
 
-task mergeSourceModel(dependsOn: [createSOModel, copyLog4jProp, copyModelFile]) {
+task mergeSourceModel(dependsOn: [
+                        createSOModel, 
+                        project(':imbuild:im-ant-tasks').tasks.jar,
+                        copyLog4jProp, 
+                        copyModelFile
+                    ]) {
     description 'merges all model defintions in xml format'
     doLast {
         ant.taskdef(
@@ -128,8 +139,8 @@ task copyGenomicProps(type: Copy, dependsOn: createBuildFolder) {
     include 'genomic_*'
 }
 
-task buildDb(dependsOn: [copyMineProperty, copyGenomicProps, compileJava]) {
-    description 'clean and build the objectstore'
+task buildXmlModel(dependsOn: [copyMineProperty, copyGenomicProps, compileJava]) {
+    description 'generate xml object model for database'
     doLast {
         ant.taskdef(
             name: 'buildtorque',
@@ -146,7 +157,34 @@ task buildDb(dependsOn: [copyMineProperty, copyGenomicProps, compileJava]) {
         }
         ant.buildtorque(
             osName: 'os.production',
-            destFile: file("${project(':intermine:integrate:model:fulldata').buildDir}/main/os.production-schema.xml").toString()
+            destFile: "${buildDir}/main/os.production-schema.xml"
+        )
+    }
+}
+
+task loadXmlModel {
+    description 'load object model in database(objectstorage)'
+    doLast {
+        ant.taskdef(
+            name: 'builddb',
+            classname: 'org.intermine.task.BuildDbTask'
+        ) {
+            classpath {
+                pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
+                pathelement(path: configurations.log4j.asPath)
+                pathelement(path: configurations.lang.asPath)
+                pathelement(path: configurations.pg.asPath)
+                pathelement(path: configurations.hikari.asPath)
+                pathelement(path: configurations.torquegen.asPath)
+                pathelement(path: "${buildDir}/main")
+            }
+        }
+        ant.builddb(
+            osName: 'os.production',
+            tempdir: "${buildDir}/tmp",
+            schemafile: 'os.production-schema.xml',
+            model: 'genomic'
         )
     }
 }
