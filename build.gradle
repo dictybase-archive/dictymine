@@ -30,8 +30,6 @@ dependencies {
 }
 */
 
-def mineName = System.getenv("INTERMINE_NAME") != null ? System.getenv("INTERMINE_NAME") : 'dictymine'
-def mineDir = file("${projectDir}/${mineName}")
 
 subprojects {
 	// Apply the java-library plugin to add support for Java
@@ -64,6 +62,12 @@ subprojects {
         }
     }
 
+    ext {
+        mineName = System.getenv("INTERMINE_NAME") != null ? System.getenv("INTERMINE_NAME") : 'dictymine'
+        mineDir = file("${rootDir}/${mineName}")
+        minePropDir = ''
+    }
+
 	task createBuildFolder {
 		description 'Create build folders for generating classes'
 		doLast {
@@ -89,26 +93,31 @@ subprojects {
 
     task checkPropFile {
         description 'Check for mine properties file, if absent throws error'
-        doLast {
-            def mineProp = file(System.getenv("HOME") + '/.intermine/' + mineName + '.properties')
-            if (!mineProp.exists()) {
-                if (System.getenv("INTERMINE_PROPERTY") == null) {
-                    throw new StopActionException("could not find mine properties file !!!!")
-                } else {
-                    mineProp = System.getenv("INTERMINE_PROPERTY")
-                }
+        minePropDir = file(System.getenv("HOME") + '/.intermine')
+        if (!minePropDir.exists()) {
+            if (System.getenv("INTERMINE_PROPERTY_DIR") == null) {
+                throw new StopActionException("could not find mine properties file !!!!")
+            } else {
+                minePropDir = System.getenv("INTERMINE_PROPERTY_DIR")
             }
-            rootProject.ext.mineProp = mineProp
         }
     }
 
-    task copyMineProperties(type: Copy, dependsOn: checkPropFile) {
+
+    task copyDefaultProperty(type: Copy, dependsOn: createBuildFolder) {
         description 'Copy the default mine property files to build folder'
-        from rootProject.ext.mineProp
+        from mineDir 
         into "${buildDir}/main"
-        
-        from "${mineDir}/default.integrate.intermine.properties" 
+        include "default.intermine.integrate.properties"
+        rename "default.intermine.integrate.properties" "default.intermine.properties" 
+    }
+
+    task copyMineProperty(type: Copy, dependsOn: [checkPropFile, copyDefaultProperty]) {
+        description 'Copy the mine specific property files to build folder'
+        from minePropDir
         into "${buildDir}/main"
+        include "${mineName}.properties"
+        rename "${mineName}.properties", "intermine.properties"
     }
 }
 
