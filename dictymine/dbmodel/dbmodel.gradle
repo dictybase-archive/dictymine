@@ -140,7 +140,7 @@ task copyGenomicProps(type: Copy, dependsOn: createBuildFolder) {
 }
 
 task buildXmlModel(dependsOn: [copyMineProperty, copyGenomicProps, compileJava]) {
-    description 'generate xml object model for database'
+    description 'generate xml object model for loading in database'
     doLast {
         ant.taskdef(
             name: 'buildtorque',
@@ -162,11 +162,11 @@ task buildXmlModel(dependsOn: [copyMineProperty, copyGenomicProps, compileJava])
     }
 }
 
-task loadXmlModel {
-    description 'load object model in database(objectstorage)'
+task prepareDb(dependsOn: buildXmlModel) {
+    description 'prepare database(objectstorage) before loading object model'
     doLast {
         ant.taskdef(
-            name: 'builddb',
+            name: 'preparedb',
             classname: 'org.intermine.task.BuildDbTask'
         ) {
             classpath {
@@ -180,11 +180,37 @@ task loadXmlModel {
                 pathelement(path: "${buildDir}/main")
             }
         }
-        ant.builddb(
+        ant.preparedb(
             osName: 'os.production',
             tempdir: "${buildDir}/tmp",
             schemafile: 'os.production-schema.xml',
             model: 'genomic'
+        )
+    }
+}
+
+
+task insertModel(dependsOn: prepareDb) {
+    description 'load object model in database(objectstorage)'
+    doLast {
+        ant.taskdef(
+            name: 'insertmodel',
+            classname: 'org.intermine.task.StoreMetadataTask'
+        ) {
+            classpath {
+                pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
+                pathelement(path: configurations.log4j.asPath)
+                pathelement(path: configurations.lang.asPath)
+                pathelement(path: configurations.pg.asPath)
+                pathelement(path: configurations.hikari.asPath)
+                pathelement(path: "${buildDir}/main")
+                pathelement(path: "${buildDir}/model")
+            }
+        }
+        ant.insertmodel(
+            osName: 'os.production',
+            modelName: 'genomic'
         )
     }
 }
