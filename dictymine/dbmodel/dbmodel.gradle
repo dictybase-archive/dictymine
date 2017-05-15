@@ -13,6 +13,10 @@ project(':dictymine:dbmodel') {
         }
     }
 
+    //configurations {
+        //objectstore
+    //}
+
     dependencies {
         api project(':bio:core')
         api project(':intermine:model')
@@ -124,15 +128,13 @@ project(':dictymine:dbmodel') {
         include 'genomic_*'
     }
 
-    task buildDB {
-        description 'prepare(builds) database for running data integrations'
-        dependsOn [
-            copyMineProperty,
+    task buildDB(dependsOn: [
             copyGenomicProps,
             compileJava,
             insertModel,
             createIndexes,
             analyseDb
-        ]
+        ]){
+            description 'prepare(builds) database for running data integrations'
     }
 }

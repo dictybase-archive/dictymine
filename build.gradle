@@ -59,9 +59,13 @@ subprojects {
         pg
         hikari
         torquegen
+        objectstore
+        integrate
     }
 
     dependencies {
+        objectstore project(':intermine:objectstore')
+        integrate project(':intermine:integrate')
         log4j group: 'log4j', name: 'log4j', version: '1.2.7'
         lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
         bbop group: 'obo', name: 'bbop', version: '1.000'
@@ -90,6 +94,12 @@ subprojects {
         minePropDir = null
         osName = null
         model = null
+    }
+
+    task testConfiguration {
+        doLast {
+            println configurations.objectstore.asPath
+        }
     }
 
 	task createBuildFolder {
@@ -146,7 +156,7 @@ subprojects {
         rename "${mineName}.properties", "intermine.properties"
     }
 
-    task buildXmlModel {
+    task buildXmlModel(dependsOn: [copyMineProperty, copyLog4jProp]) {
         description 'generate xml object model for loading in database'
         doLast {
             ant.taskdef(
@@ -154,10 +164,7 @@ subprojects {
                 classname: 'org.intermine.objectstore.intermine.TorqueModelOutputTask'
             ) {
                 classpath {
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
+                    pathelement(path: configurations.objectstore.asPath)
                     pathelement(path: "${buildDir}/main")
                     pathelement(path: sourceSets.main.output.classesDir)
                 }
@@ -177,20 +184,14 @@ subprojects {
                 classname: 'org.intermine.task.BuildDbTask'
             ) {
                 classpath {
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: configurations.pg.asPath)
-                    pathelement(path: configurations.hikari.asPath)
-                    pathelement(path: configurations.torquegen.asPath)
+                    pathelement(path: configurations.objectstore.asPath)
                     pathelement(path: "${buildDir}/main")
                 }
             }
             ant.preparedb(
                 osName: osName,
                 tempdir: "${buildDir}/tmp",
-                schemafile: "${osName}-schema.xml',
+                schemafile: "${osName}-schema.xml",
                 model: model
             )
         }
@@ -205,12 +206,7 @@ subprojects {
                 classname: 'org.intermine.task.StoreMetadataTask'
             ) {
                 classpath {
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: configurations.pg.asPath)
-                    pathelement(path: configurations.hikari.asPath)
+                    pathelement(path: configurations.objectstore.asPath)
                     pathelement(path: "${buildDir}/main")
                     pathelement(path: "${buildDir}/model")
                 }
@@ -230,15 +226,10 @@ subprojects {
                 classname: 'org.intermine.task.CreateIndexesTask'
             ) {
                 classpath {
-                    pathelement(path: project(':intermine:integrate').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: configurations.pg.asPath)
-                    pathelement(path: configurations.hikari.asPath)
-                    pathelement(path: "${buildDir}/main")
+                    pathelement(path: configurations.objectstore.asPath)
+                    pathelement(path: configurations.integrate.asPath)
                     pathelement(path: sourceSets.main.output.classesDir)
+                    pathelement(path: "${buildDir}/main")
                     pathelement(path: "${buildDir}/model")
                 }
             }
@@ -257,15 +248,10 @@ subprojects {
                 classname: 'org.intermine.task.AnalyseDbTask'
             ) {
                 classpath {
-                    pathelement(path: project(':intermine:integrate').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: configurations.pg.asPath)
-                    pathelement(path: configurations.hikari.asPath)
-                    pathelement(path: "${buildDir}/main")
+                    pathelement(path: configurations.objectstore.asPath)
+                    pathelement(path: configurations.integrate.asPath)
                     pathelement(path: sourceSets.main.output.classesDir)
+                    pathelement(path: "${buildDir}/main")
                     pathelement(path: "${buildDir}/model")
                 }
             }
@@ -451,10 +437,12 @@ project(':intermine:objectstore') {
         api group: 'net.sourceforge.iharder', name: 'base64', version: '2.3.8'
 		api group: 'commons-logging', name: 'commons-logging', version: '1.1.1'
 		api group: 'org.postgresql', name: 'postgresql', version: '9.4.1212.jre7'
+		api group: 'org.apache.torque', name: 'torque', version: '3.3'
+		api group: 'torque', name: 'torque-gen', version: '3.3'
+		api group: 'com.zaxxer', name: 'HikariCP-java6', version: '2.3.8'
         implementation group: 'cglib', name: 'cglib', version: '3.1'
         implementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.6.1'
 		implementation group: 'commons-digester', name: 'commons-digester', version: '2.1'
-		implementation group: 'com.zaxxer', name: 'HikariCP-java6', version: '2.3.8'
 		implementation group: 'org.javassist', name: 'javassist', version: '3.18.2-GA'
 		implementation group: 'javax.xml', name: 'jaxrpc-api', version: '1.1'
 		implementation group: 'org.gnu.readline', name: 'libreadline-java', version: '0.8.0'
@@ -464,8 +452,6 @@ project(':intermine:objectstore') {
 		implementation group: 'saaj', name: 'saaj', version: '1.1'
 		implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'
 		implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.7'
-		implementation group: 'org.apache.torque', name: 'torque', version: '3.3'
-		implementation group: 'torque', name: 'torque-gen', version: '3.3'
 		implementation group: 'org.apache.velocity', name: 'velocity', version: '1.5'
 		implementation group: 'xerces', name: 'xercesImpl', version: '2.9.1'
     }
