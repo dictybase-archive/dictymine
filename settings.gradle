@@ -24,7 +24,9 @@ include 'bio:tools'
 include 'bio:webapp'
 include 'bio:core'
 include 'dictymine:dbmodel'
+include 'dictymine:integrate'
 include 'imbuild:im-ant-tasks'
+include ':bio:sources:discoideum-ax4'
 
 rootProject.name = 'intermine'
 
