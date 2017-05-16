@@ -38,8 +38,18 @@ project(':dictymine:dbmodel') {
         into "${buildDir}/main"
     }
 
+    task copyGenomicProps(type: Copy, dependsOn: createBuildFolder) {
+        from "${projectDir}/resources"
+        into "${buildDir}/model"
+        include 'genomic_*'
+    }
 
-    task createSOModel(dependsOn: [createBuildFolder, project(':bio:core').tasks.jar]){
+    task copyAggregate() { 
+        dependsOn copyDefaultProperty, copyMineProperty, copyModelFile, copyModelFileForCompile, copyGenomicProps
+    }
+    copyModelFileForCompile.mustRunAfter(copyModelFile)
+
+    task createSOModel(dependsOn: [copyAggregate, project(':bio:core').tasks.jar]){
         description 'create so model xml definition file'
         doLast {
             ant.taskdef(
@@ -68,8 +78,6 @@ project(':dictymine:dbmodel') {
     task mergeSourceModel(dependsOn: [
                             createSOModel, 
                             project(':imbuild:im-ant-tasks').tasks.jar,
-                            copyLog4jProp, 
-                            copyModelFile
                         ]) {
         description 'merges all model defintions in xml format'
         doLast {
@@ -97,7 +105,7 @@ project(':dictymine:dbmodel') {
         }
     }
 
-    task generateModel(dependsOn: [mergeSourceModel, copyModelFileForCompile]) {
+    task generateModel(dependsOn: mergeSourceModel) {
         description 'Generate genomic model classes from xml definition file'
         doLast {
             ant.taskdef(
@@ -120,21 +128,13 @@ project(':dictymine:dbmodel') {
             )
         }
     }
-    compileJava.dependsOn(generateModel)
+    assemble.dependsOn(generateModel)
 
-    task copyGenomicProps(type: Copy, dependsOn: createBuildFolder) {
-        from "${projectDir}/resources"
-        into "${buildDir}/model"
-        include 'genomic_*'
+    task buildDb() {
+        description 'prepare(builds) database for running data integrations'
+        dependsOn assemble, insertmodel, createIndexes, analyseDb
     }
-
-    task buildDB(dependsOn: [
-            copyGenomicProps,
-            compileJava,
-            insertModel,
-            createIndexes,
-            analyseDb
-        ]){
-            description 'prepare(builds) database for running data integrations'
-    }
+    insertModel.mustRunAfter(assemble)
+    createIndexes.mustRunAfter(insertModel)
+    analyseDb.mustRunAfter(createIndexes)
 }

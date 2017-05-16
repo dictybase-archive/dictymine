@@ -139,7 +139,6 @@ subprojects {
         }
     }
 
-
     task copyDefaultProperty(type: Copy, dependsOn: createBuildFolder) {
         description 'Copy the default mine property files to build folder'
         from mineDir 
@@ -148,7 +147,7 @@ subprojects {
         rename "default.intermine.integrate.properties", "default.intermine.properties" 
     }
 
-    task copyMineProperty(type: Copy, dependsOn: [checkPropFile, copyDefaultProperty]) {
+    task copyMineProperty(type: Copy, dependsOn: [createBuildFolder, checkPropFile]) {
         description 'Copy the mine specific property files to build folder'
         from minePropDir
         into "${buildDir}/main"
@@ -156,7 +155,10 @@ subprojects {
         rename "${mineName}.properties", "intermine.properties"
     }
 
-    task buildXmlModel(dependsOn: [copyMineProperty, copyLog4jProp]) {
+    task buildXmlModel(dependsOn: [
+            project(':intermine:objectstore:assemble',
+            project(':intermine:model:assemble') ]
+        ){
         description 'generate xml object model for loading in database'
         doLast {
             ant.taskdef(
@@ -176,7 +178,7 @@ subprojects {
         }
     }
 
-    task prepareDb(dependsOn: buildXmlModel) {
+    task prepareDb(dependsOn: [buildXmlModel, copyMineProperty, copyLog4jProp]) {
         description 'prepare database(objectstorage) before loading object model'
         doLast {
             ant.taskdef(
@@ -218,7 +220,7 @@ subprojects {
         }
     }
 
-    task createIndexes {
+    task createIndexes(dependsOn: project(':intermine:integrate:assemble')) {
         description 'create indexes in database(objectstorage)'
         doLast {
             ant.taskdef(
