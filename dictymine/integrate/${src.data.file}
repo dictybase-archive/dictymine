@@ -1,9 +1,0 @@
-<items>
-<item id="-1_1" class="Organism">
-<attribute name="genus" value="Dictyostelium"/>
-<attribute name="name" value="Dictyostelium discoideum AX4"/>
-<attribute name="shortName" value="D. discoideum AX4"/>
-<attribute name="species" value="discoideum AX4"/>
-<attribute name="taxonId" value="352472"/>
-</item>
-</items>

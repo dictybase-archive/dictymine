@@ -155,10 +155,7 @@ subprojects {
         rename "${mineName}.properties", "intermine.properties"
     }
 
-    task buildXmlModel(dependsOn: [
-            project(':intermine:objectstore:assemble',
-            project(':intermine:model:assemble') ]
-        ){
+    task buildXmlModel(dependsOn: ':intermine:objectstore:jar'){
         description 'generate xml object model for loading in database'
         doLast {
             ant.taskdef(
@@ -220,7 +217,10 @@ subprojects {
         }
     }
 
-    task createIndexes(dependsOn: project(':intermine:integrate:assemble')) {
+    task createIndexes(dependsOn: [
+            ':intermine:objectstore:jar',
+            ':intermine:integrate:jar'
+            ]) {
         description 'create indexes in database(objectstorage)'
         doLast {
             ant.taskdef(
@@ -350,7 +350,7 @@ project(':intermine:integrate:model:fulldata') {
                 srcDirs = ["${buildDir}/gen/src"]
             }
             resources {
-                srcDirs = ['resources']
+                srcDirs = ["${buildDir}/main", "resources"]
             }
         }
     }
@@ -367,13 +367,13 @@ project(':intermine:integrate:model:fulldata') {
         lang group: 'commons-lang', name: 'commons-lang', version: '2.6'
     }
 
-	task copyFiles(type: Copy) {
+	task copyFiles(type: Copy, dependsOn: createBuildFolder) {
 		description 'Copies xml model files to build directory'
 		from "${projectDir}/fulldata_model.xml"
 		into "${buildDir}/main"
 	}
 
-	task generateModel(dependsOn: [createBuildFolder, copyFiles]) {
+	task generateModel(dependsOn: copyFiles) {
 		description 'Generate model classes from xml definition file'
 		doLast {
 			ant.taskdef(
