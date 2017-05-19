@@ -4,6 +4,11 @@ def parseSourceProp = { filePath ->
     props
 }
 
+
+def testThat = { project -> 
+    println project.findProject(':intermine:integrate').sourceSets.main.output.classesDir
+}
+
 def sourceXmlToConfig = { source ->
     def props = new Properties()
     source.property.each { prop ->
@@ -67,20 +72,20 @@ def loadTgtSource = { project, srcName ->
             classname: 'org.intermine.bio.task.GFF3ConverterTask'
         ){
             classpath {
-                pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                pathelement(path: project(':intermine:integrate').sourceSets.main.output.classesDir)
-                pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                pathelement(path: project(':intermine:integrate:model:fulldata').sourceSets.main.output.classesDir)
-                pathelement(path: project(':intermine:integrate:model:fulldata').sourceSets.main.output.resourcesDir)
-                pathelement(path: project(':dictymine:dbmodel').sourceSets.main.output.resourcesDir)
-                pathelement(path: project(":bio:sources:${srcType}").sourceSets.main.output.classesDir)
-                pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
-                pathelement(path: configurations.log4j.asPath)
-                pathelement(path: configurations.lang.asPath)
-                pathelement(path: configurations.hikari.asPath)
-                pathelement(path: configurations.pg.asPath)
-                pathelement(path: "${buildDir}/main")
+                pathelement(path: project.findProject(':bio:core').sourceSets.main.output.classesDir)
+                pathelement(path: project.findProject(':intermine:objectstore').sourceSets.main.output.classesDir)
+                pathelement(path: project.findProject(':intermine:integrate').sourceSets.main.output.classesDir)
+                pathelement(path: project.findProject(':intermine:model').sourceSets.main.output.classesDir)
+                pathelement(path: project.findProject(':intermine:integrate:model:fulldata').sourceSets.main.output.classesDir)
+                pathelement(path: project.findProject(':intermine:integrate:model:fulldata').sourceSets.main.output.resourcesDir)
+                pathelement(path: project.findProject(':dictymine:dbmodel').sourceSets.main.output.resourcesDir)
+                pathelement(path: project.findProject(":bio:sources:${srcType}").sourceSets.main.output.classesDir)
+                pathelement(path: project.findProject(':bio:core').sourceSets.main.output.resourcesDir)
+                pathelement(path: project.configurations.log4j.asPath)
+                pathelement(path: project.configurations.lang.asPath)
+                pathelement(path: project.configurations.hikari.asPath)
+                pathelement(path: project.configurations.pg.asPath)
+                pathelement(path: "${project.buildDir}/main")
             }
         }
         ant.convertgff3(
@@ -114,6 +119,7 @@ project(':dictymine:integrate') {
 
     configurations {
         builder
+        integration
         gff3converter
         log4j
         hikari
@@ -124,6 +130,8 @@ project(':dictymine:integrate') {
         builder project(':intermine:objectstore')
         builder project(':intermine:integrate')
         gff3converter project(':bio:core')
+        integration project(':intermine:objectstore')
+        integration project(':intermine:integrate')
     }
 
     task copyAggregate { 
@@ -170,7 +178,14 @@ project(':dictymine:integrate') {
     loadSourceInTgtItems.mustRunAfter(insertModel)
     createIndexes.mustRunAfter(loadSourceInTgtItems)
     analyseDb.mustRunAfter(createIndexes)
+
+    task testProject {
+        doLast {
+            testThat(project)
+        }
+    }
 }
+
 
 project(':bio:sources:discoideum-ax4') {
     dependencies {
