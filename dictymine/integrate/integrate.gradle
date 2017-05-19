@@ -52,6 +52,60 @@ def srcLocation = { source ->
     prop.@location
 }
 
+def loadTgtSource = { project, srcName -> 
+    def projectXml = project.projectXml
+    def srcType = projXmltoType(projectXml, srcName)
+    def srcTree = projXmltoSourceTree(projectXml, srcName)
+    def mergedProps = mergeProps(
+        parseSourceProp("${project.sourceDir}/${srcType}/project.properties"),
+        sourceXmlToConfig(srcTree) 
+    ) 
+    // check if its a gff3 source
+    if (mergedProps.containsKey('have.file.gff3')) {
+        ant.taskdef(
+            name: 'convertgff3',
+            classname: 'org.intermine.bio.task.GFF3ConverterTask'
+        ){
+            classpath {
+                pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:integrate').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:integrate:model:fulldata').sourceSets.main.output.classesDir)
+                pathelement(path: project(':intermine:integrate:model:fulldata').sourceSets.main.output.resourcesDir)
+                pathelement(path: project(':dictymine:dbmodel').sourceSets.main.output.resourcesDir)
+                pathelement(path: project(":bio:sources:${srcType}").sourceSets.main.output.classesDir)
+                pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
+                pathelement(path: configurations.log4j.asPath)
+                pathelement(path: configurations.lang.asPath)
+                pathelement(path: configurations.hikari.asPath)
+                pathelement(path: configurations.pg.asPath)
+                pathelement(path: "${buildDir}/main")
+            }
+        }
+        ant.convertgff3(
+            converter: 'org.intermine.bio.dataconversion.GFF3Converter',
+            target: "osw.${commonOsPrefix(projectXml)}-tgt-items",
+            seqClsName: mergedProps['gff3.seqClsName'],
+            orgTaxonId:  mergedProps['gff3.taxonId'],
+            dataSourceName: mergedProps['gff3.dataSourceName'],
+            dataSetTitle: mergedProps['gff3.dataSetTitle'],
+            handlerClassName: mergedProps['gff3.handlerClassName'],
+            model: tgtModel(projectXml),
+            seqDataSourceName: mergedProps.containsKey('gff3.seqDataSourceName') ? mergedProps['gff3.seqDataSourceName']: null
+            //seqHandlerClassName: mergedProps.containsKey('gff3.seqHandlerClassName') ? mergedProps['gff3.seqHandlerClassName']: '',
+            //dontCreateLocations: mergedProps.containsKey('gff3.dontCreateLocations') ? mergedProps['gff3.dontCreateLocations']: false
+        ) {
+            fileset(dir: srcLocation(srcTree)) {
+                include(name: '*.gff')
+                include(name: '*.gff3')
+            }
+        }
+    } else {
+        println 'other source is not defined yet'
+    }
+}
+
 
 project(':dictymine:integrate') {
 
@@ -80,84 +134,42 @@ project(':dictymine:integrate') {
         dependsOn ':intermine:integrate:jar', ':intermine:integrate:model:fulldata:jar'
     }
 
-    task buildTgtItemsDb {
-        description 'preapre(builds) items database for running integration'
-        dependsOn copyAggregate, jarAggregate, insertModel
-    }
-    jarAggregate.mustRunAfter(copyAggregate)
-    insertModel.mustRunAfter(jarAggregate)
-
-    task loadSource {
+    task loadSourceInTgtItems {
         def srcName = project.hasProperty('source') ? source : null
         doLast {
             if (srcName.contains(',')) {
-                def srcToLoad = srcName.tokenize(',')
+                srcName.tokenize(',').each {
+                    loadTgtSource(project, it)
+                }
             } else {
-               def srcType = projXmltoType(projectXml, srcName)
-               def srcTree = projXmltoSourceTree(projectXml, srcName)
-               def mergedProps = mergeProps(
-                    parseSourceProp("${sourceDir}/${srcType}/project.properties"),
-                    sourceXmlToConfig(srcTree) 
-               ) 
-               // check if its a gff3 source
-               if (mergedProps.containsKey('have.file.gff3')) {
-                    ant.taskdef(
-                        name: 'convertgff3',
-                        classname: 'org.intermine.bio.task.GFF3ConverterTask'
-                    ){
-                        classpath {
-                            pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                            pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                            pathelement(path: project(':intermine:integrate').sourceSets.main.output.classesDir)
-                            pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir)
-                            pathelement(path: project(':intermine:integrate:model:fulldata').sourceSets.main.output.classesDir)
-                            pathelement(path: project(':intermine:integrate:model:fulldata').sourceSets.main.output.resourcesDir)
-                            pathelement(path: project(':dictymine:dbmodel').sourceSets.main.output.resourcesDir)
-                            pathelement(path: project(":bio:sources:${srcType}").sourceSets.main.output.classesDir)
-                            pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
-                            pathelement(path: configurations.log4j.asPath)
-                            pathelement(path: configurations.lang.asPath)
-                            pathelement(path: configurations.hikari.asPath)
-                            pathelement(path: configurations.pg.asPath)
-                            pathelement(path: "${buildDir}/main")
-                        }
-                    }
-                    ant.convertgff3(
-                        converter: 'org.intermine.bio.dataconversion.GFF3Converter',
-                        target: "osw.${commonOsPrefix(projectXml)}-tgt-items",
-                        seqClsName: mergedProps['gff3.seqClsName'],
-                        orgTaxonId:  mergedProps['gff3.taxonId'],
-                        dataSourceName: mergedProps['gff3.dataSourceName'],
-                        dataSetTitle: mergedProps['gff3.dataSetTitle'],
-                        handlerClassName: mergedProps['gff3.handlerClassName'],
-                        model: tgtModel(projectXml),
-                        seqDataSourceName: mergedProps.containsKey('gff3.seqDataSourceName') ? mergedProps['gff3.seqDataSourceName']: null
-                        //seqHandlerClassName: mergedProps.containsKey('gff3.seqHandlerClassName') ? mergedProps['gff3.seqHandlerClassName']: '',
-                        //dontCreateLocations: mergedProps.containsKey('gff3.dontCreateLocations') ? mergedProps['gff3.dontCreateLocations']: false
-                    ) {
-                        fileset(dir: srcLocation(srcTree)) {
-                            include(name: '*.gff')
-                            include(name: '*.gff3')
-                        }
-                    }
-               } else {
-                    println 'not a gff3 source'
-               }
+                loadTgtSource(project, srcName)
             }
         }
     }
-    loadSource.dependsOn {
-        def srcType = projXmltoType(projectXml, source)
-        [':bio:core:jar', ':intermine:objectstore:jar', ':dictymine:dbmodel:jar', ":bio:sources:${srcType}:jar"]
-    }
-
-
-    task checkConfig{
-        doLast {
-            println commonOsPrefix(projectXml)
-            println tgtModel(projectXml)
+    loadSourceInTgtItems.dependsOn {
+        def srcName = project.hasProperty('source') ? source : null
+        def baseDep = [':bio:core:jar', ':intermine:objectstore:jar', ':dictymine:dbmodel:jar']
+        if (srcName.contains(',')) {
+            srcName.tokenize(',').each { 
+                def srcType = projXmltoType(projectXml, it)
+                baseDep.add(":bio:sources:${srcType}:jar")
+            }
+        } else {
+            def srcType = projXmltoType(projectXml, srcName)
+            baseDep.add(":bio:sources:${srcType}:jar")
         }
+        baseDep
     }
+
+    task buildTgtItemsDb {
+        description 'preapre(builds) items database for running integration'
+        dependsOn copyAggregate, jarAggregate, insertModel, loadSourceInTgtItems, createIndexes, analyseDb
+    }
+    jarAggregate.mustRunAfter(copyAggregate)
+    insertModel.mustRunAfter(jarAggregate)
+    loadSourceInTgtItems.mustRunAfter(insertModel)
+    createIndexes.mustRunAfter(loadSourceInTgtItems)
+    analyseDb.mustRunAfter(createIndexes)
 }
 
 project(':bio:sources:discoideum-ax4') {
