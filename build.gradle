@@ -91,6 +91,9 @@ subprojects {
     ext {
         mineName = System.getenv("INTERMINE_NAME") != null ? System.getenv("INTERMINE_NAME") : 'dictymine'
         mineDir = file("${rootDir}/${mineName}")
+        sourceDir = "${rootDir}/bio/sources"
+        projectXml = new XmlParser().parse("${mineDir}/project.xml")
+        mineSources = projectXml.sources.source.collect{ it.@type } 
         minePropDir = null
         osName = null
         model = null
@@ -111,7 +114,6 @@ subprojects {
 							"${buildDir}/tmp",
 							"${buildDir}/classes",
 							"${buildDir}/gen/src",
-
 						)
 			collection.each { File file -> 
 				file.mkdirs()
@@ -155,7 +157,7 @@ subprojects {
         rename "${mineName}.properties", "intermine.properties"
     }
 
-    task buildXmlModel(dependsOn: ':intermine:objectstore:jar'){
+    task buildXmlModel(dependsOn: [':intermine:objectstore:jar', ':intermine:model:jar']){
         description 'generate xml object model for loading in database'
         doLast {
             ant.taskdef(
@@ -163,7 +165,7 @@ subprojects {
                 classname: 'org.intermine.objectstore.intermine.TorqueModelOutputTask'
             ) {
                 classpath {
-                    pathelement(path: configurations.objectstore.asPath)
+                    pathelement(path: configurations.builder.asPath)
                     pathelement(path: "${buildDir}/main")
                     pathelement(path: sourceSets.main.output.classesDir)
                 }
@@ -183,7 +185,7 @@ subprojects {
                 classname: 'org.intermine.task.BuildDbTask'
             ) {
                 classpath {
-                    pathelement(path: configurations.objectstore.asPath)
+                    pathelement(path: configurations.builder.asPath)
                     pathelement(path: "${buildDir}/main")
                 }
             }
@@ -205,7 +207,7 @@ subprojects {
                 classname: 'org.intermine.task.StoreMetadataTask'
             ) {
                 classpath {
-                    pathelement(path: configurations.objectstore.asPath)
+                    pathelement(path: configurations.builder.asPath)
                     pathelement(path: "${buildDir}/main")
                     pathelement(path: "${buildDir}/model")
                 }
@@ -228,8 +230,7 @@ subprojects {
                 classname: 'org.intermine.task.CreateIndexesTask'
             ) {
                 classpath {
-                    pathelement(path: configurations.objectstore.asPath)
-                    pathelement(path: configurations.integrate.asPath)
+                    pathelement(path: configurations.integration.asPath)
                     pathelement(path: sourceSets.main.output.classesDir)
                     pathelement(path: "${buildDir}/main")
                     pathelement(path: "${buildDir}/model")
@@ -250,8 +251,7 @@ subprojects {
                 classname: 'org.intermine.task.AnalyseDbTask'
             ) {
                 classpath {
-                    pathelement(path: configurations.objectstore.asPath)
-                    pathelement(path: configurations.integrate.asPath)
+                    pathelement(path: configurations.integration.asPath)
                     pathelement(path: sourceSets.main.output.classesDir)
                     pathelement(path: "${buildDir}/main")
                     pathelement(path: "${buildDir}/model")
@@ -452,8 +452,8 @@ project(':intermine:objectstore') {
 		implementation group: 'au.com.bytecode', name: 'opencsv', version: '2.4'
 		implementation group: 'org.postgresql', name: 'postgresql', version: '9.4.1212.jre7'
 		implementation group: 'saaj', name: 'saaj', version: '1.1'
-		implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'
-		implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.7'
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'
+        implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.7'
 		implementation group: 'org.apache.velocity', name: 'velocity', version: '1.5'
 		implementation group: 'xerces', name: 'xercesImpl', version: '2.9.1'
     }

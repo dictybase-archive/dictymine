@@ -8,20 +8,24 @@ project(':dictymine:dbmodel') {
                 srcDirs = ["${buildDir}/gen/src"]
             }
             resources {
-                srcDirs = ['resources']
+                srcDirs = ['resources', "${buildDir}/main"]
             }
         }
     }
 
-    //configurations {
-        //objectstore
-    //}
+    configurations {
+        builder
+        integration
+    }
 
     dependencies {
         api project(':bio:core')
         api project(':intermine:model')
         api project(':imbuild:im-ant-tasks')
         api project(':intermine:integrate:model:fulldata')
+        builder project(':intermine:objectstore')
+        integration project(':intermine:objectstore')
+        integration project(':intermine:integrate')
     }
 
     task copyModelFile(type: Copy, dependsOn: createBuildFolder) {
@@ -32,11 +36,6 @@ project(':dictymine:dbmodel') {
         rename "core.xml", "genomic_model.xml"
     }
 
-    task copyModelFileForCompile(type: Copy) {
-        description 'Copies genomic xml model files to build/main directory'
-        from "${buildDir}/model/genomic_model.xml"
-        into "${buildDir}/main"
-    }
 
     task copyGenomicProps(type: Copy, dependsOn: createBuildFolder) {
         from "${projectDir}/resources"
@@ -45,11 +44,10 @@ project(':dictymine:dbmodel') {
     }
 
     task copyAggregate() { 
-        dependsOn copyDefaultProperty, copyMineProperty, copyModelFile, copyModelFileForCompile, copyGenomicProps
+        dependsOn copyDefaultProperty, copyMineProperty, copyModelFile, copyGenomicProps
     }
-    copyModelFileForCompile.mustRunAfter(copyModelFile)
 
-    task createSOModel(dependsOn: [copyAggregate, project(':bio:core').tasks.jar]){
+    task createSOModel(dependsOn: [copyAggregate, ':bio:core:jar']){
         description 'create so model xml definition file'
         doLast {
             ant.taskdef(
@@ -77,7 +75,7 @@ project(':dictymine:dbmodel') {
 
     task mergeSourceModel(dependsOn: [
                             createSOModel, 
-                            project(':imbuild:im-ant-tasks').tasks.jar,
+                            ':imbuild:im-ant-tasks:jar',
                         ]) {
         description 'merges all model defintions in xml format'
         doLast {
@@ -105,7 +103,13 @@ project(':dictymine:dbmodel') {
         }
     }
 
-    task generateModel(dependsOn: mergeSourceModel) {
+    task copyModelFileForCompile(type: Copy, dependsOn: mergeSourceModel) {
+        description 'Copies genomic xml model files to build/main directory'
+        from "${buildDir}/model/genomic_model.xml"
+        into "${buildDir}/main"
+    }
+
+    task generateModel(dependsOn: copyModelFileForCompile) {
         description 'Generate genomic model classes from xml definition file'
         doLast {
             ant.taskdef(
@@ -128,13 +132,13 @@ project(':dictymine:dbmodel') {
             )
         }
     }
-    assemble.dependsOn(generateModel)
+    jar.dependsOn(generateModel)
 
     task buildDb() {
         description 'prepare(builds) database for running data integrations'
-        dependsOn assemble, insertmodel, createIndexes, analyseDb
+        dependsOn jar, insertModel, createIndexes, analyseDb
     }
-    insertModel.mustRunAfter(assemble)
+    insertModel.mustRunAfter(jar)
     createIndexes.mustRunAfter(insertModel)
     analyseDb.mustRunAfter(createIndexes)
 }
