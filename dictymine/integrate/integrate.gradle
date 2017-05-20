@@ -111,6 +111,36 @@ def loadTgtSource = { project, srcName ->
     }
 }
 
+def loadTgtToProd = { project, srcName 
+    def projectXml = project.projectXml
+    def srcType = projXmltoType(projectXml, srcName)
+    def srcTree = projXmltoSourceTree(projectXml, srcName)
+
+    ant.taskdef(
+       name: 'loadtgttoprod',
+       classname: 'org.intermine.dataloader.ObjectStoreDataloaderTask'
+    ) {
+        classpath {
+            pathelement(path: project.findProject(':bio:core').sourceSets.main.output.classesDir)
+            pathelement(path: project.findProject(':intermine:objectstore').sourceSets.main.output.classesDir)
+            pathelement(path: project.findProject(':intermine:integrate').sourceSets.main.output.classesDir)
+            pathelement(path: project.findProject(':intermine:model').sourceSets.main.output.classesDir)
+            pathelement(path: project.configurations.log4j.asPath)
+            pathelement(path: project.configurations.lang.asPath)
+            pathelement(path: project.configurations.hikari.asPath)
+            pathelement(path: project.configurations.pg.asPath)
+            pathelement(path: "${project.buildDir}/main")
+        }
+    }
+    ant.loadtgttoprod(
+        integrationWriter: 'integration.production',
+        source: "os.${commonOsPrefix(project)}-translated",
+        sourceName: srcName,
+        sourceType: srcType,
+        allSources:
+    )
+}
+
 
 project(':dictymine:integrate') {
 
@@ -179,9 +209,17 @@ project(':dictymine:integrate') {
     createIndexes.mustRunAfter(loadSourceInTgtItems)
     analyseDb.mustRunAfter(createIndexes)
 
-    task testProject {
+    task loadData(dependsOn: buildTgtItemsDb) {
+        description 'load tgt items into production database'
+        def srcName = project.hasProperty('source') ? source : null
         doLast {
-            testThat(project)
+            if (srcName.contains(',')) {
+                srcName.tokenize(',').each {
+                    loadTgtToProd(project, it)
+                }
+            } else {
+                loadTgtToProd(project, srcName)
+            }
         }
     }
 }
