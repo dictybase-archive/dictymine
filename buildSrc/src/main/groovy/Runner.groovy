@@ -11,7 +11,7 @@ class TaskRunner {
             }
         }
         project.ant.buildtorque(
-            osName: osName,
+            osName: project.osName,
             destFile: "${project.buildDir}/main/${project.osName}-schema.xml"
         )
     }
@@ -27,7 +27,7 @@ class TaskRunner {
             }
         }
         project.ant.preparedb(
-            osName: osName,
+            osName: project.osName,
             tempdir: "${project.buildDir}/tmp",
             schemafile: "${project.osName}-schema.xml",
             model: project.model
@@ -80,7 +80,7 @@ class TaskRunner {
                 pathelement(path: "${project.buildDir}/model")
             }
         }
-        ant.analysedb(
+        project.ant.analysedb(
             osName: project.osName
         )
     }
@@ -120,7 +120,7 @@ class TaskRunner {
     }
 
     def projXmltoType(project, name) { 
-        source = this.projXmltoSourceTree(project, name)
+        def source = this.projXmltoSourceTree(project, name)
         source.@type
     }
 
@@ -237,5 +237,17 @@ class TaskRunner {
             sourceType: srcType,
             allSources: projectXml.sources.source.collect { it.@name }.join(' ')
         )
+    }
+
+    def runAll(allSrc, project) {
+        allSrc.each { name -> 
+            this.makeXmlModel(project)
+            this.prepareDatabase(project)
+            this.insertDbModel(project)
+            this.loadTgtSource(project, name)
+            this.createDbIndexes(project)
+            this.analyseDatabase(project)
+            this.loadTgtToProd(project, name)
+        }
     }
 }

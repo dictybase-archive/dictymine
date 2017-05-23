@@ -1,5 +1,3 @@
-apply from: 'module.gradle'
-
 project(':dictymine:integrate') {
 
     ext.osName = 'os.common-tgt-items-std'
@@ -33,87 +31,90 @@ project(':dictymine:integrate') {
     }
 
     task jarAggregate {
-        dependsOn [
+        dependsOn {
+                [
                     ':intermine:model:jar',
                     ':intermine:objectstore:jar',
                     ':intermine:integrate:jar', 
-                    ':intermine:integrate:model:fulldata:jar'
+                    ':intermine:integrate:model:fulldata:jar',
                     ':bio:core:jar',
                     ':dictymine:dbmodel:jar',
                 ]
+            }
     }
 
-    task loadSourceInTgtItems {
-        def srcName = project.hasProperty('source') ? source : null
-        doLast {
-            if (srcName.contains(',')) {
-                srcName.tokenize(',').each {
-                    loadTgtSource(project, it)
-                }
-            } else {
-                loadTgtSource(project, srcName)
-            }
-        }
-    }
-    loadSourceInTgtItems.dependsOn {
-        def srcName = project.hasProperty('source') ? source : null
-        def baseDep = [':bio:core:jar', ':intermine:objectstore:jar', ':dictymine:dbmodel:jar']
-        if (srcName.contains(',')) {
-            srcName.tokenize(',').each { 
-                def srcType = projXmltoType(projectXml, it)
-                baseDep.add(":bio:sources:${srcType}:jar")
-            }
-        } else {
-            def srcType = projXmltoType(projectXml, srcName)
-            baseDep.add(":bio:sources:${srcType}:jar")
-        }
-        baseDep
-    }
+    //task loadSourceInTgtItems {
+        //def srcName = project.hasProperty('source') ? source : null
+        //doLast {
+            //if (srcName.contains(',')) {
+                //srcName.tokenize(',').each {
+                    //loadTgtSource(project, it)
+                //}
+            //} else {
+                //loadTgtSource(project, srcName)
+            //}
+        //}
+    //}
+    //loadSourceInTgtItems.dependsOn {
+        //def srcName = project.hasProperty('source') ? source : null
+        //def baseDep = [':bio:core:jar', ':intermine:objectstore:jar', ':dictymine:dbmodel:jar']
+        //if (srcName.contains(',')) {
+            //srcName.tokenize(',').each { 
+                //def srcType = projXmltoType(projectXml, it)
+                //baseDep.add(":bio:sources:${srcType}:jar")
+            //}
+        //} else {
+            //def srcType = projXmltoType(projectXml, srcName)
+            //baseDep.add(":bio:sources:${srcType}:jar")
+        //}
+        //baseDep
+    //}
 
-    task buildTgtItemsDb {
-        description 'preapre(builds) items database for running integration'
-        dependsOn copyAggregate, jarAggregate, insertModel, loadSourceInTgtItems, createIndexes, analyseDb
-    }
-    insertModel.mustRunAfter(jarAggregate)
-    loadSourceInTgtItems.mustRunAfter(insertModel)
-    createIndexes.mustRunAfter(loadSourceInTgtItems)
-    analyseDb.mustRunAfter(createIndexes)
+    //task buildTgtItemsDb {
+        //description 'preapre(builds) items database for running integration'
+        //dependsOn copyAggregate, jarAggregate, insertModel, loadSourceInTgtItems, createIndexes, analyseDb
+    //}
+    //insertModel.mustRunAfter(jarAggregate)
+    //loadSourceInTgtItems.mustRunAfter(insertModel)
+    //createIndexes.mustRunAfter(loadSourceInTgtItems)
+    //analyseDb.mustRunAfter(createIndexes)
 
     task loadData {
         description 'load data into production database'
         def srcName = project.hasProperty('source') ? source : null
         doLast {
-            if (srcName.contains(',')) {
-                srcName.tokenize(',').each { name ->
-                    makeXmlModel(project)
-                    prepareDatabase(project)
-                    insertDbModel(project)
-                    loadTgtSource(project, name)
-                    createDbIndexes(project)
-                    analyseDatabase(project)
-                    loadTgtToProd(project, name)
-                }
+            def runner = new TaskRunner()
+            if (srcName == 'all') {
+                runner.runAll(mineSources,project)
+            } else if (srcName.contains(',')) {
+                runner.runAll(srcName.tokenize(','), project)
             } else {
-                makeXmlModel(project)
-                prepareDatabase(project)
-                insertDbModel(project)
-                loadTgtSource(project, srcName)
-                createDbIndexes(project)
-                analyseDatabase(project)
-                loadTgtToProd(project, srcName)
+                runner.makeXmlModel(project)
+                runner.prepareDatabase(project)
+                runner.insertDbModel(project)
+                runner.loadTgtSource(project, srcName)
+                runner.createDbIndexes(project)
+                runner.analyseDatabase(project)
+                runner.loadTgtToProd(project, srcName)
             }
         }
     }
     loadData.dependsOn {
         def srcName = project.hasProperty('source') ? source : null
         def baseDep = []
-        if (srcName.contains(',')) {
+        def runner = new TaskRunner()
+        if (srcName == 'all') {
+            mineSources.each {
+                def srcType = runner.projXmltoType(projectXml, it)
+                baseDep.add(":bio:sources:${srcType}:jar")
+            }
+        } else if (srcName.contains(',')) {
             srcName.tokenize(',').each { 
-                def srcType = projXmltoType(projectXml, it)
+                def srcType = runner.projXmltoType(projectXml, it)
                 baseDep.add(":bio:sources:${srcType}:jar")
             }
         } else {
-            def srcType = projXmltoType(projectXml, srcName)
+            def srcType = runner.projXmltoType(projectXml, srcName)
             baseDep.add(":bio:sources:${srcType}:jar")
         }
         baseDep
@@ -125,6 +126,14 @@ project(':dictymine:integrate') {
     }
     jarAggregate.mustRunAfter(copyAggregate)
     loadData.mustRunAfter(jarAggregate)
+    loadSource.onlyIf { project.hasProperty('source') }
+
+    task testModule {
+        doLast {
+            def runner = new TaskRunner()
+            runner.testThat(project)
+        }
+    }
 }
 
 project(':bio:sources:discoideum-ax4') {
