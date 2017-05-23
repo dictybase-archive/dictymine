@@ -1,156 +1,4 @@
-def parseSourceProp = { filePath ->
-    def props = new Properties()
-    new File(filePath).withInputStream{ props.load(it) }
-    props
-}
-
-
-def testThat = { project -> 
-    println project.findProject(':intermine:integrate').sourceSets.main.output.classesDir
-}
-
-def sourceXmlToConfig = { source ->
-    def props = new Properties()
-    source.property.each { prop ->
-        def values = prop.attributes().values() 
-        props.setProperty(values[0],values[1])
-    }
-    props
-}
-
-def mergeProps = { props1, props2 -> 
-    def merged = new Properties()
-    merged.putAll(props1)
-    merged.putAll(props2)
-    merged
-}
-
-def projXmltoSourceTree = { project, name ->
-    project.sources.source.find {
-       it.@name == name 
-    }
-}
-
-def projXmltoType = { project, name -> 
-    source = projXmltoSourceTree(project, name)
-    source.@type
-}
-
-def commonOsPrefix = { project ->
-    def prop = project.property.find {
-        it.@name == 'common.os.prefix'
-    }
-    prop.@value
-}
-
-def tgtModel = { project ->
-    def prop = project.property.find {
-        it.@name == 'target.model'
-    }
-    prop.@value
-}
-
-def srcLocation = { source ->
-    def prop = source.property.find {
-        it.@name == 'src.data.dir'
-    }
-    prop.@location
-}
-
-def loadTgtSource = { project, srcName -> 
-    def projectXml = project.projectXml
-    def srcType = projXmltoType(projectXml, srcName)
-    def srcTree = projXmltoSourceTree(projectXml, srcName)
-    def mergedProps = mergeProps(
-        parseSourceProp("${project.sourceDir}/${srcType}/project.properties"),
-        sourceXmlToConfig(srcTree) 
-    ) 
-    // check if its a gff3 source
-    if (mergedProps.containsKey('have.file.gff3')) {
-        ant.taskdef(
-            name: 'convertgff3',
-            classname: 'org.intermine.bio.task.GFF3ConverterTask'
-        ){
-            classpath {
-                pathelement(path: project.findProject(':bio:core').sourceSets.main.output.classesDir)
-                pathelement(path: project.findProject(':intermine:objectstore').sourceSets.main.output.classesDir)
-                pathelement(path: project.findProject(':intermine:integrate').sourceSets.main.output.classesDir)
-                pathelement(path: project.findProject(':intermine:model').sourceSets.main.output.classesDir)
-                pathelement(path: project.findProject(':intermine:integrate:model:fulldata').sourceSets.main.output.classesDir)
-                pathelement(path: project.findProject(':intermine:integrate:model:fulldata').sourceSets.main.output.resourcesDir)
-                pathelement(path: project.findProject(':dictymine:dbmodel').sourceSets.main.output.resourcesDir)
-                pathelement(path: project.findProject(":bio:sources:${srcType}").sourceSets.main.output.classesDir)
-                pathelement(path: project.findProject(':bio:core').sourceSets.main.output.resourcesDir)
-                pathelement(path: project.configurations.log4j.asPath)
-                pathelement(path: project.configurations.lang.asPath)
-                pathelement(path: project.configurations.hikari.asPath)
-                pathelement(path: project.configurations.pg.asPath)
-                pathelement(path: "${project.buildDir}/main")
-            }
-        }
-        ant.convertgff3(
-            converter: 'org.intermine.bio.dataconversion.GFF3Converter',
-            target: "osw.${commonOsPrefix(projectXml)}-tgt-items",
-            seqClsName: mergedProps['gff3.seqClsName'],
-            orgTaxonId:  mergedProps['gff3.taxonId'],
-            dataSourceName: mergedProps['gff3.dataSourceName'],
-            dataSetTitle: mergedProps['gff3.dataSetTitle'],
-            handlerClassName: mergedProps['gff3.handlerClassName'],
-            model: tgtModel(projectXml),
-            seqDataSourceName: mergedProps.containsKey('gff3.seqDataSourceName') ? mergedProps['gff3.seqDataSourceName']: null
-            //seqHandlerClassName: mergedProps.containsKey('gff3.seqHandlerClassName') ? mergedProps['gff3.seqHandlerClassName']: '',
-            //dontCreateLocations: mergedProps.containsKey('gff3.dontCreateLocations') ? mergedProps['gff3.dontCreateLocations']: false
-        ) {
-            fileset(dir: srcLocation(srcTree)) {
-                include(name: '*.gff')
-                include(name: '*.gff3')
-            }
-        }
-    } else {
-        println 'other source is not defined yet'
-    }
-}
-
-def loadTgtToProd = { project, srcName  ->
-    def projectXml = project.projectXml
-    def srcType = projXmltoType(projectXml, srcName)
-    def srcTree = projXmltoSourceTree(projectXml, srcName)
-
-    ant.taskdef(
-       name: 'loadtgttoprod',
-      classname: 'org.intermine.dataloader.ObjectStoreDataLoaderTask'
-    ) {
-        classpath {
-            pathelement(path: project.findProject(':bio:core').sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(':intermine:objectstore').sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(':intermine:integrate').sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(':intermine:model').sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(':intermine:integrate:model:fulldata').sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(':intermine:integrate:model:fulldata').sourceSets.main.output.resourcesDir)
-            pathelement(path: project.findProject(':dictymine:dbmodel').sourceSets.main.output.resourcesDir)
-            pathelement(path: project.findProject(':dictymine:dbmodel').sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(":bio:sources:${srcType}").sourceSets.main.output.classesDir)
-            pathelement(path: project.findProject(":bio:sources:${srcType}").sourceSets.main.output.resourcesDir)
-            pathelement(path: project.findProject(':bio:core').sourceSets.main.output.resourcesDir)
-            pathelement(path: project.configurations.log4j.asPath)
-            pathelement(path: project.configurations.lang.asPath)
-            pathelement(path: project.configurations.hikari.asPath)
-            pathelement(path: project.configurations.pg.asPath)
-            pathelement(path: project.configurations.cglib.asPath)
-            pathelement(path: project.configurations.torque.asPath)
-            pathelement(path: project.configurations.torquegen.asPath)
-            pathelement(path: "${project.buildDir}/main")
-        }
-    }
-    ant.loadtgttoprod(
-        integrationWriter: 'integration.production',
-        source: "os.${commonOsPrefix(projectXml)}-translated",
-        sourceName: srcName,
-        sourceType: srcType,
-        allSources: projectXml.sources.source.collect { it.@name }.join(' ')
-    )
-}
-
+apply from: 'module.gradle'
 
 project(':dictymine:integrate') {
 
@@ -225,7 +73,7 @@ project(':dictymine:integrate') {
     createIndexes.mustRunAfter(loadSourceInTgtItems)
     analyseDb.mustRunAfter(createIndexes)
 
-    task loadData(dependsOn: buildTgtItemsDb) {
+    task loadData {
         description 'load tgt items into production database'
         def srcName = project.hasProperty('source') ? source : null
         doLast {
@@ -258,6 +106,21 @@ project(':bio:sources:discoideum-ax4') {
 project(':bio:sources:dictyostelid') {
     dependencies {
         api project(':bio:core')
+    }
+
+    sourceSets {
+        main {
+            resources {
+                srcDirs = ['resources', "${projectDir}/resources"]
+            }
+        }
+    }
+}
+
+project(':bio:sources:entrez-organism') {
+    dependencies {
+        api project(':bio:core')
+        api project(':dictymine:dbmodel')
     }
 
     sourceSets {
