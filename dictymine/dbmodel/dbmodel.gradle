@@ -8,7 +8,7 @@ project(':dictymine:dbmodel') {
                 srcDirs = ["${buildDir}/gen/src"]
             }
             resources {
-                srcDirs = ['resources', "${buildDir}/main"]
+                srcDirs = ['resources', "${buildDir}/model"]
             }
         }
     }
@@ -132,7 +132,8 @@ project(':dictymine:dbmodel') {
             )
         }
     }
-    jar.dependsOn(generateModel)
+    compileJava.dependsOn(generateModel)
+    jar.dependsOn(compileJava)
 
     task buildDb() {
         description 'prepare(builds) database for running data integrations'
