@@ -30,7 +30,6 @@ dependencies {
 }
 */
 
-
 subprojects {
 	// Apply the java-library plugin to add support for Java
     apply plugin: 'java-library'
