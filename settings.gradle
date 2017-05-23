@@ -28,6 +28,7 @@ include 'dictymine:integrate'
 include 'imbuild:im-ant-tasks'
 include ':bio:sources:discoideum-ax4'
 include ':bio:sources:dictyostelid'
+include ':bio:sources:entrez-organism'
 
 rootProject.name = 'intermine'
 
