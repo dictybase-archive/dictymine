@@ -33,7 +33,14 @@ project(':dictymine:integrate') {
     }
 
     task jarAggregate {
-        dependsOn ':intermine:integrate:jar', ':intermine:integrate:model:fulldata:jar'
+        dependsOn [
+                    ':intermine:model:jar',
+                    ':intermine:objectstore:jar',
+                    ':intermine:integrate:jar', 
+                    ':intermine:integrate:model:fulldata:jar'
+                    ':bio:core:jar',
+                    ':dictymine:dbmodel:jar',
+                ]
     }
 
     task loadSourceInTgtItems {
@@ -67,27 +74,58 @@ project(':dictymine:integrate') {
         description 'preapre(builds) items database for running integration'
         dependsOn copyAggregate, jarAggregate, insertModel, loadSourceInTgtItems, createIndexes, analyseDb
     }
-    jarAggregate.mustRunAfter(copyAggregate)
     insertModel.mustRunAfter(jarAggregate)
     loadSourceInTgtItems.mustRunAfter(insertModel)
     createIndexes.mustRunAfter(loadSourceInTgtItems)
     analyseDb.mustRunAfter(createIndexes)
 
     task loadData {
-        description 'load tgt items into production database'
+        description 'load data into production database'
         def srcName = project.hasProperty('source') ? source : null
         doLast {
             if (srcName.contains(',')) {
-                srcName.tokenize(',').each {
-                    loadTgtToProd(project, it)
+                srcName.tokenize(',').each { name ->
+                    makeXmlModel(project)
+                    prepareDatabase(project)
+                    insertDbModel(project)
+                    loadTgtSource(project, name)
+                    createDbIndexes(project)
+                    analyseDatabase(project)
+                    loadTgtToProd(project, name)
                 }
             } else {
+                makeXmlModel(project)
+                prepareDatabase(project)
+                insertDbModel(project)
+                loadTgtSource(project, srcName)
+                createDbIndexes(project)
+                analyseDatabase(project)
                 loadTgtToProd(project, srcName)
             }
         }
     }
-}
+    loadData.dependsOn {
+        def srcName = project.hasProperty('source') ? source : null
+        def baseDep = []
+        if (srcName.contains(',')) {
+            srcName.tokenize(',').each { 
+                def srcType = projXmltoType(projectXml, it)
+                baseDep.add(":bio:sources:${srcType}:jar")
+            }
+        } else {
+            def srcType = projXmltoType(projectXml, srcName)
+            baseDep.add(":bio:sources:${srcType}:jar")
+        }
+        baseDep
+    }
 
+    task loadSource {
+        description 'integrate data from sources into database'
+        dependsOn copyAggregate, jarAggregate, loadData
+    }
+    jarAggregate.mustRunAfter(copyAggregate)
+    loadData.mustRunAfter(jarAggregate)
+}
 
 project(':bio:sources:discoideum-ax4') {
     dependencies {
