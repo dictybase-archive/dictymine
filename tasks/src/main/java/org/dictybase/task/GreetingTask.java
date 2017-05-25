@@ -5,13 +5,12 @@ import org.gradle.api.file.*;
 import org.gradle.api.tasks.*;
 
 public class GreetingTask extends DefaultTask {
-    @Input
-    public String greeting;
+    private String greeting;
 
-    //@Input
-    //public String getGreeting() {
-        //return this.greeting;
-    //}
+    @Input
+    public void setGreeting(String text) {
+        greeting = text;
+    }
 
     @TaskAction
     public void run() {

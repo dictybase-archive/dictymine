@@ -33,7 +33,7 @@ import org.gradle.api.tasks.*;
 
 public class SOToModelTask extends DefaultTask
 {
-    //private File soFile, soTermListFile, outputFile;
+    private File soFile, soTermListFile, outputFile;
 
     /**
      * Sets the File containing the SO OBO data.
@@ -41,21 +41,27 @@ public class SOToModelTask extends DefaultTask
      * @param soFile the SO OBO file
      */
     @InputFile
-    public File soFile;
+    public void setSoFile(File file) {
+        soFile = file ;
+    }
 
     /**
      * Set the file containing a list of SO terms to be added to the data model.
      * @param soTermListFile file containing list of SO terms
      */
     @InputFile
-    public File soTermListFile;
+    public void setSoTermListFile(File file) {
+        soTermListFile = file;
+    }
 
     /**
      * Set the output file to write generated additions XML to.
      * @param outputFile the additions file that will be generated
      */
     @OutputFile
-    public File outputFile;
+    public void setOutputFile(File file) {
+        outputFile = file;
+    }
 
     @TaskAction
     public void run() {

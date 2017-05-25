@@ -51,9 +51,10 @@ project(':dictymine:dbmodel') {
 
     task createSOModel(type: SOToModelTask, dependsOn: [copyAggregate]){
         description 'create so model xml definition file'
-            soTermListFile = file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt")
-            soFile  = file("${rootDir}/bio/sources/so/data/so.obo2.5")
-            outputFile  = file("${buildDir}/model/so_additions.xml")
+
+            soTermListFile  file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt")
+            soFile  file("${rootDir}/bio/sources/so/data/so.obo2.5")
+            outputFile  file("${buildDir}/model/so_additions.xml")
     }
 
     task mergeSourceModel(dependsOn: [
