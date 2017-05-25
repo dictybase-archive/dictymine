@@ -127,13 +127,6 @@ project(':dictymine:integrate') {
     jarAggregate.mustRunAfter(copyAggregate)
     loadData.mustRunAfter(jarAggregate)
     loadSource.onlyIf { project.hasProperty('source') }
-
-    task testModule {
-        doLast {
-            def runner = new TaskRunner()
-            runner.testThat(project)
-        }
-    }
 }
 
 project(':bio:sources:discoideum-ax4') {
