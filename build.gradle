@@ -30,6 +30,19 @@ dependencies {
 }
 */
 
+buildscript {
+    repositories {
+        maven {
+            url "file://${rootDir}/intermine/repo"
+        }
+        // maven central
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'org.dictybase', name: 'dictymine-tasks', version: '1.7'
+    }
+}
+
 task publishAll(
     dependsOn: [
         ':intermine:api:publish',
@@ -46,7 +59,8 @@ task publishAll(
         ':bio:tools:publish',
         ':bio:webapp:publish',
         ':bio:core:publish',
-        ':imbuild:im-ant-tasks:publish'
+        ':imbuild:im-ant-tasks:publish',
+        ':tasks:publish'
     ]
 )
 
@@ -810,20 +824,32 @@ project(':imbuild:im-ant-tasks') {
     }
 }
 
-//project(':tasks') {
-    //dependencies {
-        //api gradleApi()
-        //api project(':bio:core')
-    //}
+project(':tasks') {
+    dependencies {
+        api gradleApi()
+        api project(':bio:core')
+    }
 
-    //sourceSets {
-        //main {
-            //java {
-                //srcDirs = ['src/main']
-            //}
-            //resources {
-                //srcDirs = ['src/resources']
-            //}
-        //}
-    //}
-//}
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.dictybase'
+                artifactId 'dictymine-tasks'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ['src/main']
+            }
+            resources {
+                srcDirs = ['src/resources']
+            }
+        }
+    }
+}

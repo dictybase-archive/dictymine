@@ -1,3 +1,5 @@
+import org.dictybase.task.SOToModelTask
+
 project(':dictymine:dbmodel') {
     ext.osName = 'os.production'
     ext.model = 'genomic'
@@ -47,30 +49,11 @@ project(':dictymine:dbmodel') {
         dependsOn copyDefaultProperty, copyMineProperty, copyModelFile, copyGenomicProps
     }
 
-    task createSOModel(dependsOn: [copyAggregate, ':bio:core:jar']){
+    task createSOModel(type: SOToModelTask, dependsOn: [copyAggregate]){
         description 'create so model xml definition file'
-        doLast {
-            ant.taskdef(
-                name: 'somodel',
-                classname: 'org.intermine.bio.task.SOToModelTask'
-            ){
-                classpath {
-                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':bio:core').sourceSets.main.output.resourcesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: configurations.bbop.asPath)
-                    pathelement(path: configurations.obo.asPath)
-                    pathelement(path: configurations.collections.asPath)
-                }
-            }
-            ant.somodel(
-                soTermListFile: "${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt",
-                soFile: "${rootDir}/bio/sources/so/data/so.obo2.5",
-                outputFile: "${buildDir}/model/so_additions.xml" 
-            )
-        }
+            soTermListFile = file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt")
+            soFile  = file("${rootDir}/bio/sources/so/data/so.obo2.5")
+            outputFile  = file("${buildDir}/model/so_additions.xml")
     }
 
     task mergeSourceModel(dependsOn: [
