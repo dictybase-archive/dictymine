@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>org.intermine</groupId>
+  <artifactId>fulldata</artifactId>
+  <versioning>
+    <release>1.7</release>
+    <versions>
+      <version>1.7</version>
+    </versions>
+    <lastUpdated>20170525172951</lastUpdated>
+  </versioning>
+</metadata>

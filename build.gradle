@@ -30,9 +30,30 @@ dependencies {
 }
 */
 
+task publishAll(
+    dependsOn: [
+        ':intermine:api:publish',
+        ':intermine:api:model:userprofile:publish',
+        ':intermine:integrate:publish',
+        ':intermine:integrate:model:fulldata:publish',
+        ':intermine:jbrowse-endpoint:publish',
+        ':intermine:model:publish',
+        ':intermine:objectstore:publish',
+        ':intermine:pathquery:publish',
+        ':intermine:web:publish',
+        ':intermine:webservice:client:publish',
+        ':intermine:webtasks:publish',
+        ':bio:tools:publish',
+        ':bio:webapp:publish',
+        ':bio:core:publish',
+        ':imbuild:im-ant-tasks:publish'
+    ]
+)
+
 subprojects {
 	// Apply the java-library plugin to add support for Java
     apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
     sourceCompatibility = 1.6
     compileJava.options.bootClasspath = file(System.getenv("JAVA_HOME") + "/jre/lib/rt.jar")
 
@@ -48,6 +69,14 @@ subprojects {
 		// maven central
         mavenCentral()
 	}
+
+    publishing {
+        repositories {
+            maven {
+                url "file://${rootDir}/intermine/repo"
+            }
+        }
+    }
 
     configurations {
         log4j
@@ -280,6 +309,18 @@ project(':intermine:api') {
         implementation group: 'org.apache.lucene', name: 'lucene-snowball', version: '3.0.2'
         implementation group: 'xalan', name: 'xalan', version: '2.7.0'
     }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'api'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
 }
 
 project(':intermine:api:model:userprofile') {
@@ -290,6 +331,18 @@ project(':intermine:api:model:userprofile') {
             }
             resources {
                 srcDirs = ['resources']
+            }
+        }
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'userprofile'
+                version '1.7'
+
+                from components.java
             }
         }
     }
@@ -354,6 +407,18 @@ project(':intermine:integrate:model:fulldata') {
         }
     }
 
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'fulldata'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
+
 
     configurations {
         log4j
@@ -404,6 +469,19 @@ project(':intermine:integrate') {
        	implementation group: 'mysql', name: 'mysql-connector-java', version: '5.1.26'
        	implementation group: 'stax', name: 'stax-ri', version: '1.0'
     }
+
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'integrate'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
 }
 
 
@@ -419,6 +497,18 @@ project(':intermine:model') {
         implementation group: 'org.json', name: 'json', version: '20131018'
         implementation group: 'stax', name: 'stax-api', version: '1.0.1'
     }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'model'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
 }
 
 project(':intermine:objectstore') {
@@ -429,6 +519,19 @@ project(':intermine:objectstore') {
         main {
             antlr {
                 srcDirs = ['main/src']
+            }
+        }
+    }
+
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'objectstore'
+                version '1.7'
+
+                from components.java
             }
         }
     }
@@ -469,6 +572,19 @@ project(':intermine:pathquery') {
         }
     }
 
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'pathquery'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
+
 	dependencies {
        api project(':intermine:model')
        implementation group: 'stax', name: 'stax-ri', version: '1.0'
@@ -479,6 +595,19 @@ project(':intermine:webtasks') {
     dependencies {
         api project(':intermine:web')
         api project(':intermine:integrate')
+    }
+
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'webtasks'
+                version '1.7'
+
+                from components.java
+            }
+        }
     }
 }
 
@@ -518,11 +647,36 @@ project(':intermine:web') {
 		implementation group: 'org.apache.taglibs', name: 'taglibs-standard-impl', version: '1.2.1'
 		implementation group: 'com.yahoo.platform.yui', name: 'yuicompressor', version: '2.4.6'
 	}
+
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'web'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
 }
 
 project(':intermine:jbrowse-endpoint') {
     dependencies {
         api project(':intermine:web')
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'jbrowse-endpoint'
+                version '1.7'
+
+                from components.java
+            }
+        }
     }
 }
 
@@ -536,6 +690,18 @@ project(':bio:core') {
 		implementation group: 'obo', name: 'obo', version: '1.000'
 		implementation group: 'org.biojava', name: 'biojava', version: '1.7.1'
 	}
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine.bio'
+                artifactId 'bio-core'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
 }
 
 project(':bio:tools') {
@@ -544,6 +710,18 @@ project(':bio:tools') {
         api project(':intermine:integrate')
         api project(':intermine:api')
         api project(':dictymine:dbmodel')
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'bio-tools'
+                version '1.7'
+
+                from components.java
+            }
+        }
     }
 }
 
@@ -555,6 +733,18 @@ project(':bio:webapp') {
             }
             resources {
                 srcDirs = ['resources']
+            }
+        }
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'bio-webapp'
+                version '1.7'
+
+                from components.java
             }
         }
     }
@@ -596,6 +786,18 @@ project(':imbuild:im-ant-tasks') {
         api group: 'tomcat', name: 'catalina-ant', version: '5.5.23'
     }
 
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.intermine'
+                artifactId 'im-ant-tasks'
+                version '1.7'
+
+                from components.java
+            }
+        }
+    }
+
     sourceSets {
         main {
             java {
@@ -607,3 +809,21 @@ project(':imbuild:im-ant-tasks') {
         }
     }
 }
+
+//project(':tasks') {
+    //dependencies {
+        //api gradleApi()
+        //api project(':bio:core')
+    //}
+
+    //sourceSets {
+        //main {
+            //java {
+                //srcDirs = ['src/main']
+            //}
+            //resources {
+                //srcDirs = ['src/resources']
+            //}
+        //}
+    //}
+//}
