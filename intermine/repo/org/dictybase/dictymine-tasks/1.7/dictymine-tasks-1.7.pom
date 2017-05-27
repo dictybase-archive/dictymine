@@ -12,5 +12,17 @@
       <version>1.7</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.intermine</groupId>
+      <artifactId>im-ant-tasks</artifactId>
+      <version>1.7</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.torque</groupId>
+      <artifactId>torque-generator</artifactId>
+      <version>4.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>

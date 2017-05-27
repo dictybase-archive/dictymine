@@ -1,4 +1,5 @@
 import org.dictybase.task.SOToModelTask
+import org.dictybase.task.MergeSourceModelsTask
 
 project(':dictymine:dbmodel') {
     ext.osName = 'os.production'
@@ -52,39 +53,19 @@ project(':dictymine:dbmodel') {
     task createSOModel(type: SOToModelTask, dependsOn: [copyAggregate]){
         description 'create so model xml definition file'
 
-            soTermListFile  file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt")
-            soFile  file("${rootDir}/bio/sources/so/data/so.obo2.5")
-            outputFile  file("${buildDir}/model/so_additions.xml")
+            soTermListFile = file("${rootDir}/bio/test-all/dbmodel/resources/so_term_list.txt")
+            soFile = file("${rootDir}/bio/sources/so/data/so.obo2.5")
+            outputFile = file("${buildDir}/model/so_additions.xml")
     }
 
-    task mergeSourceModel(dependsOn: [
-                            createSOModel, 
-                            ':imbuild:im-ant-tasks:jar',
-                        ]) {
+    task mergeSourceModel(type: MergeSourceModelsTask, dependsOn: createSOModel) {
         description 'merges all model defintions in xml format'
-        doLast {
-            ant.taskdef(
-                name: 'mergesourcemodels',
-                classname: 'org.intermine.task.MergeSourceModelsTask'
-            ){
-                classpath(id: 'task.class.path' ) {
-                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
-                    pathelement(path: project(':imbuild:im-ant-tasks').sourceSets.main.output.classesDir) 	
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                }
-            }
-            ant.mergesourcemodels(
-                classpathref: 'task.class.path',
-                projectXml: "${mineDir}/project.xml",
-                basedir: rootDir,
-                modelFile: "${buildDir}/model/genomic_model.xml",
-                extraModelPathsStart: "${mineName}/dbmodel/build/model/so_additions.xml" + ' ' + "bio/core/genomic_additions.xml",
-                extraModelPathsEnd: ' '
-            )
-        }
+
+        projectXml = file("${mineDir}/project.xml")
+        modelFile = file("${buildDir}/model/genomic_model.xml")
+        extraModelPathsStart = files("${projectDir}/build/model/so_additions.xml",
+                                        "${rootDir}/bio/core/genomic_additions.xml")
+
     }
 
     task copyModelFileForCompile(type: Copy, dependsOn: mergeSourceModel) {

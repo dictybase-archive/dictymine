@@ -33,7 +33,9 @@ import org.gradle.api.tasks.*;
 
 public class SOToModelTask extends DefaultTask
 {
-    private File soFile, soTermListFile, outputFile;
+    private File soFile;
+    private File soTermListFile;
+    private File outputFile;
 
     /**
      * Sets the File containing the SO OBO data.
@@ -41,8 +43,11 @@ public class SOToModelTask extends DefaultTask
      * @param soFile the SO OBO file
      */
     @InputFile
+    public File getSoFile() {
+        return this.soFile;
+    }
     public void setSoFile(File file) {
-        soFile = file ;
+        this.soFile = file;
     }
 
     /**
@@ -50,8 +55,11 @@ public class SOToModelTask extends DefaultTask
      * @param soTermListFile file containing list of SO terms
      */
     @InputFile
+    public File getSoTermListFile() {
+        return this.soTermListFile;
+    }
     public void setSoTermListFile(File file) {
-        soTermListFile = file;
+        this.soTermListFile = file;
     }
 
     /**
@@ -59,12 +67,15 @@ public class SOToModelTask extends DefaultTask
      * @param outputFile the additions file that will be generated
      */
     @OutputFile
+    public File getOutputFile() {
+        return this.outputFile;
+    }
     public void setOutputFile(File file) {
-        outputFile = file;
+        this.outputFile = file;
     }
 
     @TaskAction
-    public void run() {
+    public void run() throws GradleException {
         try {
             SequenceOntology so = SequenceOntologyFactory.getSequenceOntology(soFile,
                     soTermListFile);
