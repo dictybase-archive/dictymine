@@ -7,8 +7,8 @@
   <version>1.7</version>
   <dependencies>
     <dependency>
-      <groupId>org.intermine.bio</groupId>
-      <artifactId>bio-core</artifactId>
+      <groupId>org.dictybase</groupId>
+      <artifactId>dbmodel</artifactId>
       <version>1.7</version>
       <scope>compile</scope>
     </dependency>

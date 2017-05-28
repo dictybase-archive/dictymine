@@ -1,5 +1,6 @@
 import org.dictybase.task.SOToModelTask
 import org.dictybase.task.MergeSourceModelsTask
+import org.dictybase.task.ModelOutputTask;
 
 project(':dictymine:dbmodel') {
     ext.osName = 'os.production'
@@ -19,6 +20,19 @@ project(':dictymine:dbmodel') {
     configurations {
         builder
         integration
+    }
+
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId 'org.dictybase'
+                artifactId 'dbmodel'
+                version '1.7'
+
+                from components.java
+            }
+        }
     }
 
     dependencies {
@@ -74,29 +88,15 @@ project(':dictymine:dbmodel') {
         into "${buildDir}/main"
     }
 
-    task generateModel(dependsOn: copyModelFileForCompile) {
+
+    task generateModel(type: ModelOutputTask, dependsOn: copyModelFileForCompile) {
         description 'Generate genomic model classes from xml definition file'
-        doLast {
-            ant.taskdef(
-                name: 'genomicModelOutput',
-                classname: 'org.intermine.task.ModelOutputTask'
-            ){
-                classpath {
-                    pathelement(path: project(':bio:core').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:objectstore').sourceSets.main.output.classesDir)
-                    pathelement(path: project(':intermine:model').sourceSets.main.output.classesDir) 	
-                    pathelement(path: configurations.log4j.asPath)
-                    pathelement(path: configurations.lang.asPath)
-                    pathelement(path: "${buildDir}/main")
-                }
-            }
-            ant.genomicModelOutput(
-                type: 'java',
-                model: 'genomic',
-                destdir: "${buildDir}/gen/src"
-            )
-        }
+
+        type = 'java'
+        model = 'genomic'
+        destDir = file("${buildDir}/gen/src")
     }
+
     compileJava.dependsOn(generateModel)
     jar.dependsOn(compileJava)
 
