@@ -29,6 +29,11 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 */
+import org.dictybase.task.TorqueModelOutputTask;
+
+def getOsName = { project ->
+    project.hasProperty('storage') ? project.findProperty('storage') : 'os.production'
+}
 
 buildscript {
     repositories {
@@ -200,24 +205,12 @@ subprojects {
         rename "${mineName}.properties", "intermine.properties"
     }
 
-    task buildXmlModel(dependsOn: [':intermine:objectstore:jar', ':intermine:model:jar']){
+    task buildXmlModel(type: TorqueModelOutputTask, dependsOn: createBuildFolder) {
         description 'generate xml object model for loading in database'
-        doLast {
-            ant.taskdef(
-                name: 'buildtorque',
-                classname: 'org.intermine.objectstore.intermine.TorqueModelOutputTask'
-            ) {
-                classpath {
-                    pathelement(path: configurations.builder.asPath)
-                    pathelement(path: "${buildDir}/main")
-                    pathelement(path: sourceSets.main.output.classesDir)
-                }
-            }
-            ant.buildtorque(
-                osName: osName,
-                destFile: "${buildDir}/main/${osName}-schema.xml"
-            )
-        }
+
+        osName = getOsName(project)
+        destFile = file("${buildDir}/main/${getOsName(project)}-schema.xml")
+        property = file("${buildDir}/main/default.intermine.properties")
     }
 
     task prepareDb(dependsOn: [buildXmlModel, copyMineProperty, copyLog4jProp]) {
