@@ -19,9 +19,15 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.torque</groupId>
-      <artifactId>torque-generator</artifactId>
-      <version>4.0</version>
+      <groupId>org.apache.ddlutils</groupId>
+      <artifactId>ddlutils</artifactId>
+      <version>1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>xerces</groupId>
+      <artifactId>xercesImpl</artifactId>
+      <version>2.11.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
