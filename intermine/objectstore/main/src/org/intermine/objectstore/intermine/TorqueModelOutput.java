@@ -110,7 +110,7 @@ public class TorqueModelOutput
             // not really
             .append("<!DOCTYPE database SYSTEM \""
                     + "http://db.apache.org/torque/dtd/database_3_2.dtd\">" + ENDL)
-            .append("<database name=\"\">" + ENDL);
+            .append("<database name=\"intermine\">" + ENDL);
 
         for (ClassDescriptor cld : schema.getModel().getClassDescriptors()) {
             ClassDescriptor tableMaster = schema.getTableMaster(cld);
