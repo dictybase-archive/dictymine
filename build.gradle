@@ -30,9 +30,14 @@ dependencies {
 }
 */
 import org.dictybase.task.TorqueModelOutputTask;
+import org.dictybase.task.BuildDbTask;
 
 def getOsName = { project ->
     project.hasProperty('storage') ? project.findProperty('storage') : 'os.production'
+}
+
+def getModel = { project -> 
+    project.hasProperty('model') ? project.findProperty('model') : 'genomic'
 }
 
 buildscript {
@@ -213,27 +218,16 @@ subprojects {
         property = file("${buildDir}/main/default.intermine.properties")
     }
 
-    task prepareDb(dependsOn: [buildXmlModel, copyMineProperty, copyLog4jProp]) {
-        description 'prepare database(objectstorage) before loading object model'
-        doLast {
-            ant.taskdef(
-                name: 'preparedb',
-                classname: 'org.intermine.task.BuildDbTask'
-            ) {
-                classpath {
-                    pathelement(path: configurations.builder.asPath)
-                    pathelement(path: "${buildDir}/main")
-                }
-            }
-            ant.preparedb(
-                osName: osName,
-                tempdir: "${buildDir}/tmp",
-                schemafile: "${osName}-schema.xml",
-                model: model
-            )
-        }
-    }
+    task prepareDb(type: BuildDbTask) {
+        dependsOn buildXmlModel, copyMineProperty, copyLog4jProp
+        logging.captureStandardOutput LogLevel.INFO
 
+        intermineProperty = file("${buildDir}/main/default.intermine.properties")
+        userProperty = file("${buildDir}/main/intermine.properties")
+        osName = getOsName(project)
+        model = getModel(project)
+        schemaFile = file("${buildDir}/main/${getOsName(project)}-schema.xml") 
+    }
 
     task insertModel(dependsOn: prepareDb) {
         description 'load object model in database(objectstorage)'
@@ -788,10 +782,10 @@ project(':bio:webapp') {
 project(':imbuild:im-ant-tasks') {
     dependencies {
         api group: 'org.apache.ant', name: 'ant', version: '1.6.5'
-        api group: 'xalan', name: 'serializer', version: '2.7.0'
-        api group: 'xalan', name: 'xalan', version: '2.7.0'
-        api group: 'xml-apis', name: 'xml-apis', version: '1.3.02'
-        api group: 'tomcat', name: 'catalina-ant', version: '5.5.23'
+        implementation group: 'xalan', name: 'serializer', version: '2.7.0'
+        implementation group: 'xalan', name: 'xalan', version: '2.7.0'
+        implementation group: 'xml-apis', name: 'xml-apis', version: '1.3.02'
+        implementation group: 'tomcat', name: 'catalina-ant', version: '5.5.23'
     }
 
     publishing {
@@ -823,8 +817,8 @@ project(':tasks') {
         api gradleApi()
         api project(':dictymine:dbmodel')
         api project(':imbuild:im-ant-tasks')
-        api group: 'org.apache.torque', name: 'torque-generator', version: '4.0'
-
+        api group: 'org.apache.ddlutils', name: 'ddlutils', version: '1.0'
+        api group: 'xerces', name: 'xercesImpl', version: '2.11.0'
     }
 
     publishing {
@@ -842,10 +836,10 @@ project(':tasks') {
     sourceSets {
         main {
             java {
-                srcDirs = ['src/main']
+                srcDirs = ['src/main/java']
             }
             resources {
-                srcDirs = ['src/resources']
+                srcDirs = ['src/main/resources']
             }
         }
     }
