@@ -13,6 +13,8 @@ package org.dictybase.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.File;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -171,5 +173,29 @@ public final class PropertiesUtil
             throw new RuntimeException("Failed to load :" + filename, e);
         }
         return props;
+    }
+
+    /**
+     * Merge two properties file where common properties from second file
+     * overwrites the first one
+     * @param fileOne the File object for the first file
+     * @param fileTwo the File object for the second file
+     * @returns the merged Properties object
+     */
+    public static Properties mergeProperties(File fileOne, File fileTwo) throws IOException {
+        Properties firstProps = new Properties();
+        try {
+            firstProps.load(new FileInputStream(fileOne));
+        } catch(IOException e) {
+            throw new IOException("unable to load properties file " + fileOne.toString() + " ", e);
+        }
+        Properties secondProps = new Properties();
+        try {
+            secondProps.load(new FileInputStream(fileTwo));
+        } catch(IOException e) {
+            throw new IOException("unable to load properties file " + secondProps.toString() + " ", e);
+        }
+        firstProps.putAll(secondProps);
+        return firstProps;
     }
 }
