@@ -3,9 +3,6 @@ import org.dictybase.task.MergeSourceModelsTask
 import org.dictybase.task.ModelOutputTask;
 
 project(':dictymine:dbmodel') {
-    ext.osName = 'os.production'
-    ext.model = 'genomic'
-
     sourceSets {
         main {
             java {

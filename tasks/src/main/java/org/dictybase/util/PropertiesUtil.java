@@ -155,6 +155,21 @@ public final class PropertiesUtil
 
     /**
      * Load a specified properties file
+     * @param filename is the File object
+     * @return the corresponding Properties object
+     */
+    public static Properties loadProperties(File file) throws IOException {
+        Properties props = new Properties();
+        try {
+            props.load(new FileInputStream(file));
+        } catch(IOException e) {
+            throw new IOException("unable to load properties file " + file.toString() + " ", e);
+        }
+        return props;
+    }
+
+    /**
+     * Load a specified properties file
      * @param filename the filename of the properties file
      * @return the corresponding Properties object
      */

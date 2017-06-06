@@ -78,17 +78,17 @@ public final class DatabaseFactory
 
         // Only one thread to configure or test for a DataSource
             // If we have this DataSource already configured
-        if (databases.containsKey(instance)) {
-            database = databases.get(instance);
-        } else {
+        //if (databases.containsKey(instance)) {
+            //database = databases.get(instance);
+        //} else {
             Properties props = PropertiesUtil.getPropertiesStartingWith(instance, intermineProps);
             try {
                 database = new Database(PropertiesUtil.stripStart(instance, props));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to initialise " + instance, e);
             }
-        }
-        databases.put(instance, database);
+        //}
+        //databases.put(instance, database);
         return database;
     }
 }

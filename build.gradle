@@ -31,6 +31,8 @@ dependencies {
 */
 import org.dictybase.task.TorqueModelOutputTask;
 import org.dictybase.task.BuildDbTask;
+import org.dictybase.task.StoreMetadataTask;
+import org.dictybase.task.DbShutdownTask;
 
 def getOsName = { project ->
     project.hasProperty('storage') ? project.findProperty('storage') : 'os.production'
@@ -148,8 +150,6 @@ subprojects {
         projectXml = new XmlParser().parse("${mineDir}/project.xml")
         mineSources = projectXml.sources.source.collect{ it.@type } 
         minePropDir = null
-        osName = null
-        model = null
     }
 
     task testConfiguration {
@@ -204,6 +204,7 @@ subprojects {
 
     task copyMineProperty(type: Copy, dependsOn: [createBuildFolder, checkPropFile]) {
         description 'Copy the mine specific property files to build folder'
+
         from minePropDir
         into "${buildDir}/main"
         include "${mineName}.properties"
@@ -219,6 +220,8 @@ subprojects {
     }
 
     task prepareDb(type: BuildDbTask) {
+        description 'prepare database(objectstorage) before loading object model'
+
         dependsOn buildXmlModel, copyMineProperty, copyLog4jProp
         logging.captureStandardOutput LogLevel.INFO
 
@@ -229,24 +232,15 @@ subprojects {
         schemaFile = file("${buildDir}/main/${getOsName(project)}-schema.xml") 
     }
 
-    task insertModel(dependsOn: prepareDb) {
+
+    task insertModel(type: StoreMetadataTask, dependsOn: prepareDb) {
         description 'load object model in database(objectstorage)'
-        doLast {
-            ant.taskdef(
-                name: 'insertmodel',
-                classname: 'org.intermine.task.StoreMetadataTask'
-            ) {
-                classpath {
-                    pathelement(path: configurations.builder.asPath)
-                    pathelement(path: "${buildDir}/main")
-                    pathelement(path: "${buildDir}/model")
-                }
-            }
-            ant.insertmodel(
-                osName: osName,
-                modelName: model
-            )
-        }
+
+        intermineProperty = file("${buildDir}/main/default.intermine.properties")
+        userProperty = file("${buildDir}/main/intermine.properties")
+        modelFile = file("${buildDir}/main/genomic_model.xml")
+        keyFile = file("${buildDir}/model/genomic_keyDefs.properties")
+        osName = getOsName(project)
     }
 
     task createIndexes(dependsOn: [
@@ -495,7 +489,7 @@ project(':intermine:model') {
         api group: 'log4j', name: 'log4j', version: '1.2.7'
         implementation group: 'org.ow2.asm', name: 'asm-all', version: '4.2'
         implementation group: 'org.ow2.asm', name: 'asm-util', version: '4.2'
-        implementation group: 'cglib', name: 'cglib', version: '3.1'
+        api group: 'cglib', name: 'cglib', version: '3.1'
         implementation group: 'org.json', name: 'json', version: '20131018'
         implementation group: 'stax', name: 'stax-api', version: '1.0.1'
     }
