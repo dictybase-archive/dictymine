@@ -33,13 +33,33 @@ import org.dictybase.task.TorqueModelOutputTask;
 import org.dictybase.task.BuildDbTask;
 import org.dictybase.task.StoreMetadataTask;
 import org.dictybase.task.DbShutdownTask;
+import org.dictybase.task.CreateIndexesTask;
+import org.dictybase.task.AnalyseDbTask;
 
-def getOsName = { project ->
-    project.hasProperty('storage') ? project.findProperty('storage') : 'os.production'
+
+def getOsName(project) {
+    if (project.hasProperty('storage')) {
+        return project.findProperty('storage')
+    } else if(project.name == 'dbmodel') {
+        return 'os.production'
+    } else if(project.name == 'integrate') {
+        return 'os.common-tgt-items-std' 
+    } else {
+        return 'os.production'
+    }
 }
 
-def getModel = { project -> 
-    project.hasProperty('model') ? project.findProperty('model') : 'genomic'
+
+def getModel(project) { 
+    if (project.hasProperty('model')) {
+        return project.findProperty('model')
+    } else if(project.name == 'dbmodel') {
+        return 'genomic'
+    } else if(project.name == 'integrate') {
+        return 'fulldata' 
+    } else {
+        return 'genomic'
+    }
 }
 
 buildscript {
@@ -152,10 +172,9 @@ subprojects {
         minePropDir = null
     }
 
-    task testConfiguration {
-        doLast {
-            println configurations.objectstore.asPath
-        }
+
+    task testConfiguration(type: org.dictybase.gradle.DynamicConfigTask) {
+        osName = getOsName(project)
     }
 
 	task createBuildFolder {
@@ -225,6 +244,8 @@ subprojects {
         dependsOn buildXmlModel, copyMineProperty, copyLog4jProp
         logging.captureStandardOutput LogLevel.INFO
 
+        outputs.upToDateWhen { false }
+
         intermineProperty = file("${buildDir}/main/default.intermine.properties")
         userProperty = file("${buildDir}/main/intermine.properties")
         osName = getOsName(project)
@@ -236,6 +257,8 @@ subprojects {
     task insertModel(type: StoreMetadataTask, dependsOn: prepareDb) {
         description 'load object model in database(objectstorage)'
 
+        outputs.upToDateWhen { false }
+
         intermineProperty = file("${buildDir}/main/default.intermine.properties")
         userProperty = file("${buildDir}/main/intermine.properties")
         modelFile = file("${buildDir}/main/genomic_model.xml")
@@ -243,49 +266,70 @@ subprojects {
         osName = getOsName(project)
     }
 
-    task createIndexes(dependsOn: [
+    task createIndexes(type: CreateIndexesTask, dependsOn: [
             ':intermine:objectstore:jar',
             ':intermine:integrate:jar'
             ]) {
-        description 'create indexes in database(objectstorage)'
-        doLast {
-            ant.taskdef(
-                name: 'createindexes',
-                classname: 'org.intermine.task.CreateIndexesTask'
-            ) {
-                classpath {
-                    pathelement(path: configurations.integration.asPath)
-                    pathelement(path: sourceSets.main.output.classesDir)
-                    pathelement(path: "${buildDir}/main")
-                    pathelement(path: "${buildDir}/model")
-                }
-            }
-            ant.createindexes(
-                alias: osName
-            )
-        }
+        description 'create indexes in database(objectstorage), the gradle version'
+
+        outputs.upToDateWhen { false }
+        intermineProperty = file("${buildDir}/main/default.intermine.properties")
+        userProperty = file("${buildDir}/main/intermine.properties")
+        alias = getOsName(project)
     }
 
+    task analyseDb(type: AnalyseDbTask) {
+        description 'generate query statistics for database(objectstorage), gradle version'
 
-    task analyseDb {
-        description 'generate query statistics for database(objectstorage)'
-        doLast {
-            ant.taskdef(
-                name: 'analysedb',
-                classname: 'org.intermine.task.AnalyseDbTask'
-            ) {
-                classpath {
-                    pathelement(path: configurations.integration.asPath)
-                    pathelement(path: sourceSets.main.output.classesDir)
-                    pathelement(path: "${buildDir}/main")
-                    pathelement(path: "${buildDir}/model")
-                }
-            }
-            ant.analysedb(
-                osName: osName
-            )
-        }
+        outputs.upToDateWhen { false }
+        intermineProperty = file("${buildDir}/main/default.intermine.properties")
+        userProperty = file("${buildDir}/main/intermine.properties")
+        osName = getOsName(project)
     }
+
+    //task createIndexes(dependsOn: [
+            //':intermine:objectstore:jar',
+            //':intermine:integrate:jar'
+            //]) {
+        //description 'create indexes in database(objectstorage)'
+        //doLast {
+            //ant.taskdef(
+                //name: 'createindexes',
+                //classname: 'org.intermine.task.CreateIndexesTask'
+            //) {
+                //classpath {
+                    //pathelement(path: configurations.integration.asPath)
+                    //pathelement(path: sourceSets.main.output.classesDir)
+                    //pathelement(path: "${buildDir}/main")
+                    //pathelement(path: "${buildDir}/model")
+                //}
+            //}
+            //ant.createindexes(
+                //alias: osName
+            //)
+        //}
+    //}
+
+
+    //task analyseDb {
+        //description 'generate query statistics for database(objectstorage)'
+        //doLast {
+            //ant.taskdef(
+                //name: 'analysedb',
+                //classname: 'org.intermine.task.AnalyseDbTask'
+            //) {
+                //classpath {
+                    //pathelement(path: configurations.integration.asPath)
+                    //pathelement(path: sourceSets.main.output.classesDir)
+                    //pathelement(path: "${buildDir}/main")
+                    //pathelement(path: "${buildDir}/model")
+                //}
+            //}
+            //ant.analysedb(
+                //osName: osName
+            //)
+        //}
+    //}
 
 }
 
@@ -538,8 +582,10 @@ project(':intermine:objectstore') {
 		api group: 'commons-logging', name: 'commons-logging', version: '1.1.1'
 		api group: 'org.postgresql', name: 'postgresql', version: '9.4.1212.jre7'
 		implementation group: 'org.apache.torque', name: 'torque', version: '3.3'
-		implementation group: 'torque', name: 'torque-gen', version: '3.3'
+        api group: 'antlr', name: 'antlr', version: '2.7.6'
+		api group: 'torque', name: 'torque-gen', version: '3.3'
 		api group: 'com.zaxxer', name: 'HikariCP-java6', version: '2.3.8'
+		api group: 'au.com.bytecode', name: 'opencsv', version: '2.4'
         implementation group: 'cglib', name: 'cglib', version: '3.1'
         implementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.6.1'
 		implementation group: 'commons-digester', name: 'commons-digester', version: '2.1'
@@ -547,7 +593,6 @@ project(':intermine:objectstore') {
 		implementation group: 'javax.xml', name: 'jaxrpc-api', version: '1.1'
 		implementation group: 'org.gnu.readline', name: 'libreadline-java', version: '0.8.0'
 		implementation group: 'com.oracle', name: 'ojdbc14', version: '10.2.0.3.0'
-		implementation group: 'au.com.bytecode', name: 'opencsv', version: '2.4'
 		implementation group: 'org.postgresql', name: 'postgresql', version: '9.4.1212.jre7'
 		implementation group: 'saaj', name: 'saaj', version: '1.1'
         implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'

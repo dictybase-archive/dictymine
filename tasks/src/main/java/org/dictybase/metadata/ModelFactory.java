@@ -17,8 +17,8 @@ import java.io.FileInputStream;
 import java.lang.IllegalArgumentException;
 import java.lang.RuntimeException;
 
-import org.intermine.metadata.InterMineModelParser;
-import org.intermine.metadata.Model;
+import org.dictybase.metadata.InterMineModelParser;
+import org.dictybase.metadata.Model;
 
 import org.dictybase.metadata.Util;
 

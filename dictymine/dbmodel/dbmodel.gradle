@@ -97,6 +97,7 @@ project(':dictymine:dbmodel') {
     compileJava.dependsOn(generateModel)
     jar.dependsOn(compileJava)
 
+
     task buildDb() {
         description 'prepare(builds) database for running data integrations'
         dependsOn jar, insertModel, createIndexes, analyseDb

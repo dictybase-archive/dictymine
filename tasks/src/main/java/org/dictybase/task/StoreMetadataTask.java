@@ -17,7 +17,7 @@ import java.util.Random;
 import java.io.File;
 import java.io.IOException;
 
-import org.intermine.metadata.Model;
+import org.dictybase.metadata.Model;
 
 import org.dictybase.sql.DatabaseFactory;
 import org.dictybase.sql.Database;

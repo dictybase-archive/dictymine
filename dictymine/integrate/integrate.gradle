@@ -79,6 +79,13 @@ project(':dictymine:integrate') {
     //createIndexes.mustRunAfter(loadSourceInTgtItems)
     //analyseDb.mustRunAfter(createIndexes)
 
+    task makeXmlModel {
+        doLast {
+            def runner = new TaskRunner()
+            runner.makeXmlModel(project)
+        }
+    }
+
     task loadData {
         description 'load data into production database'
         def srcName = project.hasProperty('source') ? source : null
@@ -89,7 +96,7 @@ project(':dictymine:integrate') {
             } else if (srcName.contains(',')) {
                 runner.runAll(srcName.tokenize(','), project)
             } else {
-                runner.makeXmlModel(project)
+                //runner.makeXmlModel(project)
                 runner.prepareDatabase(project)
                 runner.insertDbModel(project)
                 runner.loadTgtSource(project, srcName)
